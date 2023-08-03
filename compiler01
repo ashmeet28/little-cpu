@@ -101,26 +101,6 @@ func read_stream(stream int, buffer *uint8, buffer_size int) int {
 
 var scanner_current int = 0
 
-var array_scanner_tokens [65536]int
-
-var scanner_tokens *int = &array_scanner_tokens[0]
-
-func scanner_emit_token(token_t int, token_s int, token_e int) {
-    var t1 uint8
-    var temp_token_t
-    var p *int = scanner_tokens
-    temp_token_t = *p
-    t1 = temp_token_t != T_ILLEGAL
-    while t1 {
-        p = p + 4
-        temp_token_t = *p
-        t1 = temp_token_t != T_ILLEGAL
-    }
-    *p = token_t
-    *(p + 1) = token_s
-    *(p + 2) = token_e
-}
-
 func scanner_is_at_e() uint8 {
     var c uint8
     var p *uint8 = source_code + scanner_current
