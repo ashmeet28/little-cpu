@@ -1,8 +1,8 @@
 var array_source_code [65536]uint8
 var array_byte_code [65536]uint8
 
-var source_code *uint8 = &source_code_array[0]
-var byte_code *uint8 = &byte_code_array[0]
+var source_code *uint8
+var byte_code *uint8
 
 // Tokens
 var T_ILLEGAL int = 0
@@ -96,15 +96,16 @@ func read_stream(stream int, buffer *uint8, buffer_size int) int {
 
     p = 0x2004
     bytes_count = *p
+
     return bytes_count
 }
 
-var scanner_current int = 0
+var scanner_current *uint8
 
-func scanner_is_at_e() uint8 {
+func scanner_is_at_end() uint8 {
     var c uint8
-    var p *uint8 = source_code + scanner_current
-    c = *p
+
+    c = *scanner_current
     if c {
         return 1
     } else {
@@ -114,61 +115,84 @@ func scanner_is_at_e() uint8 {
 
 func scanner_advance() uint8 {
     var c uint8
-    var p *uint8 = source_code + scanner_current
-    c = *p
+
+    c = *scanner_current
     scanner_current = scanner_current + 1
+
     return c
 }
 
 func scanner_peek() uint8 {
     var c uint8
-    var p *uint8 = source_code + scanner_current
-    p = p + 1
+    var p *uint8
+
+    p = scanner_current + 1
     c = *p
+
     return c
 }
 
 func scanner_is_digit(c uint8) uint8 {
-    var t1 uint8 = c >= 0x30
-    var t2 uint8 = c <= 0x39
-    var t3 uint8 = t1 && t2
+    var t1 uint8
+    var t2 uint8
+    var t3 uint8
+
+    t1 = c >= 0x30
+    t2 = c <= 0x39
+    t3 = t1 && t2
+
     return t3
 }
 
 func scanner_is_printable(c uint8) uint8 {
-    var t1 uint8 = c >= 0x20
-    var t2 uint8 = c <= 0x7e
-    var t3 uint8 = t1 && t2
+    var t1 uint8
+    var t2 uint8
+    var t3 uint8
+
+    t1 = c >= 0x20
+    t2 = c <= 0x7e
+    t3 = t1 && t2
+
     return t3
 }
 
 func scanner_is_alphabet(c uint8) uint8 {
-    var t1 uint8 = c >= 0x41
-    var t2 uint8 = c <= 0x5a
+    var t1 uint8
+    var t2 uint8
+    var t3 uint8
+    var t4 uint8
+    var t5 uint8
+    var t6 uint8
+    var t7 uint8
+    var t8 uint8
+    var t9 uint8
 
-    var t3 uint8 = c >= 0x61
-    var t4 uint8 = c <= 0x7a
+    t1 = c >= 0x41
+    t2 = c <= 0x5a
+    t3 = c >= 0x61
+    t4 = c <= 0x7a
+    t5 = c == 0x5f
+    t6 = t1 && t2
+    t7 = t3 && t4
+    t8 = t6 || t7
+    t9 = t8 || t5
 
-    var t5 uint8 = c >= 0x5f
-
-    var t6 uint8 = t1 && t2
-    var t7 uint8 = t3 && t4
-
-    var t8 uint8 = t6 || t7
-    var t9 uint8 = t8 || t5
     return t9
 }
 
 func scanner_scan_token() {
     var c uint8
-    c = scanner_advance()
     var t1 uint8
+
+    c = scanner_advance()
     t1 = c == '('
     if t1 {
     }
 }
 
 func init_global_variables() {
+    source_code = &source_code_array[0]
+    byte_code = &byte_code_array[0]
 }
 
 func main() {
