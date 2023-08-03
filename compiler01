@@ -133,60 +133,147 @@ func scanner_peek() uint8 {
 }
 
 func scanner_is_digit(c uint8) uint8 {
-    var t1 uint8
-    var t2 uint8
-    var t3 uint8
+    var b1 uint8
+    var b2 uint8
+    var b3 uint8
 
-    t1 = c >= 0x30
-    t2 = c <= 0x39
-    t3 = t1 && t2
+    b1 = c >= 0x30
+    b2 = c <= 0x39
+    b3 = b1 && b2
 
-    return t3
+    return b3
 }
 
-func scanner_is_printable(c uint8) uint8 {
-    var t1 uint8
-    var t2 uint8
-    var t3 uint8
+func scanner_is_printable(c uinb8) uint8 {
+    var b1 uinb8
+    var b2 uinb8
+    var b3 uinb8
 
-    t1 = c >= 0x20
-    t2 = c <= 0x7e
-    t3 = t1 && t2
+    b1 = c >= 0x20
+    b2 = c <= 0x7e
+    b3 = b1 && b2
 
-    return t3
+    return b3
 }
 
-func scanner_is_alphabet(c uint8) uint8 {
-    var t1 uint8
-    var t2 uint8
-    var t3 uint8
-    var t4 uint8
-    var t5 uint8
-    var t6 uint8
-    var t7 uint8
-    var t8 uint8
-    var t9 uint8
+func scanner_is_alphabet(c uinb8) uint8 {
+    var b1 uinb8
+    var b2 uinb8
+    var b3 uinb8
+    var b4 uinb8
+    var b5 uinb8
+    var b6 uinb8
+    var b7 uinb8
+    var b8 uint8
+    var b9 uinb8
 
-    t1 = c >= 0x41
-    t2 = c <= 0x5a
-    t3 = c >= 0x61
-    t4 = c <= 0x7a
-    t5 = c == 0x5f
-    t6 = t1 && t2
-    t7 = t3 && t4
-    t8 = t6 || t7
-    t9 = t8 || t5
+    b1 = c >= 0x41
+    b2 = c <= 0x5a
+    b3 = c >= 0x61
+    b4 = c <= 0x7a
+    b5 = c == 0x5f
+    b6 = b1 && b2
+    b7 = b3 && b4
+    b8 = b6 || b7
+    b9 = b8 || b5
 
-    return t9
+    return b9
 }
 
-func scanner_scan_token() {
+func scanner_scan_token() [4]int {
     var c uint8
-    var t1 uint8
+    var b1 uint8
+    var token [4]int
 
     c = scanner_advance()
-    t1 = c == '('
-    if t1 {
+
+    b1 = c == '+'
+    if b1 {
+        token[0] = T_ADD
+    }
+    b1 = c == '-'
+    if b1 {
+        token[0] = T_SUB
+    }
+    b1 = c == '*'
+    if b1 {
+        token[0] = T_MUL
+    }
+    b1 = c == '/'
+    if b1 {
+        token[0] = T_QUO
+    }
+    b1 = c == '%'
+    if b1 {
+        token[0] = T_REM
+    }
+    b1 = c == '&'
+    if b1 {
+        token[0] = T_ADD
+    }
+    b1 = c == '|'
+    if b1 {
+        token[0] = T_OR
+    }
+    b1 = c == '^'
+    if b1 {
+        token[0] = T_XOR
+    }
+    b1 = c == '<'
+    if b1 {
+        token[0] = T_LSS
+    }
+    b1 = c == '>'
+    if b1 {
+        token[0] = T_GTR
+    }
+    b1 = c == '='
+    if b1 {
+        token[0] = T_ASSIGN
+    }
+    b1 = c == '!'
+    if b1 {
+        token[0] = T_NOT
+    }
+    b1 = c == '('
+    if b1 {
+        token[0] = T_LPAREN
+    }
+    b1 = c == '['
+    if b1 {
+        token[0] = T_LBRACK
+    }
+    b1 = c == '{'
+    if b1 {
+        token[0] = T_LBRACE
+    }
+    b1 = c == ','
+    if b1 {
+        token[0] = T_COMMA
+    }
+    b1 = c == '.'
+    if b1 {
+        token[0] = T_PERIOD
+    }
+    b1 = c == ')'
+    if b1 {
+        token[0] = T_RPAREN
+    }
+    b1 = c == ']'
+    if b1 {
+        token[0] = T_RBRACK
+    }
+    b1 = c == '}'
+    if b1 {
+        token[0] = T_RBRACE
+    }
+    b1 = c == ';'
+    if b1 {
+        token[0] = T_SEMICOLON
+    }
+    b1 = c == ':'
+    if b1 {
+        token[0] = T_COLON
     }
 }
 
