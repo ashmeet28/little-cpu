@@ -181,97 +181,136 @@ func scanner_is_alphabet(c uinb8) uint8 {
 }
 
 func scanner_scan_token() [4]int {
-    var c uint8
-    var b1 uint8
+    var c1 uint8
     var token [4]int
+    var b1 uint8
+    var b2 uint8
+    var b3 uint8
+    var b4 uint8
+    var b5 uint8
+    var b6 uint8
 
-    c = scanner_advance()
+    c1 = scanner_advance()
 
-    b1 = c == '+'
+    b1 = c1 == '+'
     if b1 {
         token[0] = T_ADD
     }
-    b1 = c == '-'
+
+    b1 = c1 == '-'
     if b1 {
         token[0] = T_SUB
     }
-    b1 = c == '*'
+
+    b1 = c1 == '*'
     if b1 {
         token[0] = T_MUL
     }
-    b1 = c == '/'
+
+    b1 = c1 == '/'
     if b1 {
-        token[0] = T_QUO
+        c2 = scanner_peek()
+        b2 = c2 == '/'
+        if b2 {
+            scanner_advance()
+            c3 = scanner_peek()
+            b3 = c3 != 0x0a
+            while c3 {
+                scanner_advance()
+                c3 = scanner_peek()
+                b3 = c3 != 0x0a
+            }
+        } else {
+            token[0] = T_QUO
+        }
     }
-    b1 = c == '%'
+
+    b1 = c1 == '%'
     if b1 {
         token[0] = T_REM
     }
-    b1 = c == '&'
+
+    b1 = c1 == '&'
     if b1 {
         token[0] = T_ADD
     }
-    b1 = c == '|'
+
+    b1 = c1 == '|'
     if b1 {
         token[0] = T_OR
     }
-    b1 = c == '^'
+
+    b1 = c1 == '^'
     if b1 {
         token[0] = T_XOR
     }
-    b1 = c == '<'
+
+    b1 = c1 == '<'
     if b1 {
         token[0] = T_LSS
     }
-    b1 = c == '>'
+
+    b1 = c1 == '>'
     if b1 {
         token[0] = T_GTR
     }
-    b1 = c == '='
+
+    b1 = c1 == '='
     if b1 {
         token[0] = T_ASSIGN
     }
-    b1 = c == '!'
+
+    b1 = c1 == '!'
     if b1 {
         token[0] = T_NOT
     }
-    b1 = c == '('
+
+    b1 = c1 == '('
     if b1 {
         token[0] = T_LPAREN
     }
-    b1 = c == '['
+
+    b1 = c1 == '['
     if b1 {
         token[0] = T_LBRACK
     }
-    b1 = c == '{'
+
+    b1 = c1 == '{'
     if b1 {
         token[0] = T_LBRACE
     }
-    b1 = c == ','
+
+    b1 = c1 == ','
     if b1 {
         token[0] = T_COMMA
     }
-    b1 = c == '.'
+
+    b1 = c1 == '.'
     if b1 {
         token[0] = T_PERIOD
     }
-    b1 = c == ')'
+
+    b1 = c1 == ')'
     if b1 {
         token[0] = T_RPAREN
     }
-    b1 = c == ']'
+
+    b1 = c1 == ']'
     if b1 {
         token[0] = T_RBRACK
     }
-    b1 = c == '}'
+
+    b1 = c1 == '}'
     if b1 {
         token[0] = T_RBRACE
     }
-    b1 = c == ';'
+
+    b1 = c1 == ';'
     if b1 {
         token[0] = T_SEMICOLON
     }
-    b1 = c == ':'
+
+    b1 = c1 == ':'
     if b1 {
         token[0] = T_COLON
     }
