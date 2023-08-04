@@ -225,7 +225,7 @@ func scanner_scan_token() [4]int {
                 c3 = scanner_peek()
                 b3 = c3 != 0x0a
             }
-            token[0] = 
+            token[0] = T_COMMENT
         } else {
             token[0] = T_QUO
         }
@@ -280,7 +280,7 @@ func scanner_scan_token() [4]int {
     b1 = c1 == '>'
     if b1 {
         c2 = scanner_peek()
-        b2 = c2 == '<'
+        b2 = c2 == '>'
         if b2 {
             scanner_advance()
             token[0] = T_SHR
