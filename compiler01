@@ -181,14 +181,15 @@ func scanner_is_alphabet(c uinb8) uint8 {
 }
 
 func scanner_scan_token() [4]int {
-    var c1 uint8
     var token [4]int
+
+    var c1 uint8
+    var c2 uint8
+    var c3 uint8
+
     var b1 uint8
     var b2 uint8
     var b3 uint8
-    var b4 uint8
-    var b5 uint8
-    var b6 uint8
 
     c1 = scanner_advance()
 
@@ -215,7 +216,7 @@ func scanner_scan_token() [4]int {
             scanner_advance()
             c3 = scanner_peek()
             b3 = c3 != 0x0a
-            while c3 {
+            while b3 {
                 scanner_advance()
                 c3 = scanner_peek()
                 b3 = c3 != 0x0a
