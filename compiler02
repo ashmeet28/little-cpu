@@ -192,6 +192,9 @@ func scanner_is_alphabet(c uinb8) uint8 {
     return b9
 }
 
+func scanner_check_for_keyword(low_bound int, high_bound int) int {
+}
+
 func scanner_scan_token() [4]int {
     var token [4]int
 
@@ -206,9 +209,9 @@ func scanner_scan_token() [4]int {
     var b3 uint8
     var b4 uint8
 
-    c1 = scanner_advance()
-
     scanner_start = scanner_current
+
+    c1 = scanner_advance()
 
     b1 = c1 == '+'
     if b1 {
@@ -410,11 +413,34 @@ func scanner_scan_token() [4]int {
             b3 = c2 == ' '
             b4 = b2 && b3
         }
+        token[0] = T_INT
+        token[1] = scanner_start
+        token[2] = scanner_current
     }
+
+    b1 = scanner_is_alphabet(c1)
+    if b1 {
+        c2 = scanner_peek()
+        b2 = c2 != 0x0a
+        b3 = c2 != ' '
+        b4 = b2 && b3
+        while b4 {
+            scanner_advance()
+            c2 = scanner_peek()
+            b2 = c2 == 0x0a
+            b3 = c2 == ' '
+            b4 = b2 && b3
+        }
+        token[0] = T_IDENT
+        token[1] = scanner_start
+        token[2] = scanner_current
+    }
+
+    return token
 }
 
 func init_global_variables() {
-    source_code = &source_code_array[0]
+    source_code = &array_source_code[0]
     byte_code = &byte_code_array[0]
 }
 
