@@ -78,7 +78,10 @@ var T_STRUCT int = 56
 var T_TYPE int = 57
 var T_VAR int = 58
 
-var T_EOF int = 59
+var T_SPACE = 59
+var T_NEW_LINE = 60
+
+var T_EOF int = 61
 
 func read_stream(stream int, buffer *uint8, buffer_size int) int {
     var p *int
@@ -194,6 +197,7 @@ func scanner_scan_token() [4]int {
     var b1 uint8
     var b2 uint8
     var b3 uint8
+    var b4 uint8
 
     c1 = scanner_advance()
 
@@ -354,6 +358,34 @@ func scanner_scan_token() [4]int {
     b1 = c1 == ':'
     if b1 {
         token[0] = T_COLON
+    }
+
+    b1 = c1 == ' '
+    if b1 {
+        c2 = scanner_peek()
+        b2 = c2 == ' '
+        while b2 {
+            scanner_advance()
+            c2 = scanner_peek()
+            b2 = c2 == ' '
+        }
+        token[0] = T_SPACE
+    }
+
+    b1 = c1 == 0x0a
+    if b1 {
+        c2 = scanner_peek()
+        b2 = c2 == 0x0a
+        b3 = c2 == ' '
+        b4 = b2 || b3
+        while b4 {
+            scanner_advance()
+            c2 = scanner_peek()
+            b2 = c2 == 0x0a
+            b3 = c2 == ' '
+            b4 = b2 || b3
+        }
+        token[0] = T_NEW_LINE
     }
 }
 
