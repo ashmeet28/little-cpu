@@ -192,6 +192,82 @@ func scanner_is_alphabet(c uinb8) uint8 {
     return b9
 }
 
+var array_scanner_keywords uint8[58]
+var scanner_keywords *uint8
+
+func scanner_init_keywords() {
+    array_scanner_keywords[0] = 'w'
+    array_scanner_keywords[1] = 'h'
+    array_scanner_keywords[2] = 'i'
+    array_scanner_keywords[3] = 'l'
+    array_scanner_keywords[4] = 'e'
+    array_scanner_keywords[5] = '\x0a'
+
+    array_scanner_keywords[6] = 'b'
+    array_scanner_keywords[7] = 'r'
+    array_scanner_keywords[8] = 'e'
+    array_scanner_keywords[9] = 'a'
+    array_scanner_keywords[10] = 'k'
+    array_scanner_keywords[11] = '\x0a'
+
+    array_scanner_keywords[12] = 'c'
+    array_scanner_keywords[13] = 'o'
+    array_scanner_keywords[14] = 'n'
+    array_scanner_keywords[15] = 't'
+    array_scanner_keywords[16] = 'i'
+    array_scanner_keywords[17] = 'n'
+    array_scanner_keywords[18] = 'u'
+    array_scanner_keywords[19] = 'e'
+    array_scanner_keywords[20] = '\x0a'
+
+    array_scanner_keywords[21] = 'i'
+    array_scanner_keywords[22] = 'f'
+    array_scanner_keywords[23] = '\x0a'
+
+    array_scanner_keywords[24] = 'e'
+    array_scanner_keywords[25] = 'l'
+    array_scanner_keywords[26] = 's'
+    array_scanner_keywords[27] = 'e'
+    array_scanner_keywords[28] = '\x0a'
+
+    array_scanner_keywords[29] = 'f'
+    array_scanner_keywords[30] = 'u'
+    array_scanner_keywords[31] = 'n'
+    array_scanner_keywords[32] = 'c'
+    array_scanner_keywords[33] = '\x0a'
+
+    array_scanner_keywords[34] = 'r'
+    array_scanner_keywords[35] = 'e'
+    array_scanner_keywords[36] = 't'
+    array_scanner_keywords[37] = 'u'
+    array_scanner_keywords[38] = 'r'
+    array_scanner_keywords[39] = 'n'
+    array_scanner_keywords[40] = '\x0a'
+
+    array_scanner_keywords[41] = 's'
+    array_scanner_keywords[42] = 't'
+    array_scanner_keywords[43] = 'r'
+    array_scanner_keywords[44] = 'u'
+    array_scanner_keywords[45] = 'c'
+    array_scanner_keywords[46] = 't'
+    array_scanner_keywords[47] = '\x0a'
+
+    array_scanner_keywords[48] = 't'
+    array_scanner_keywords[49] = 'y'
+    array_scanner_keywords[50] = 'p'
+    array_scanner_keywords[51] = 'e'
+    array_scanner_keywords[52] = '\x0a'
+
+    array_scanner_keywords[53] = 'v'
+    array_scanner_keywords[54] = 'a'
+    array_scanner_keywords[55] = 'r'
+    array_scanner_keywords[56] = '\x0a'
+
+    array_scanner_keywords[57] = '\x00'
+
+    scanner_keywords = &array_scanner_keywords[0]
+}
+
 func scanner_check_for_keyword(low_bound int, high_bound int) int {
 }
 
@@ -442,6 +518,7 @@ func scanner_scan_token() [4]int {
 func init_global_variables() {
     source_code = &array_source_code[0]
     byte_code = &byte_code_array[0]
+    scanner_init_keywords()
 }
 
 func main() {
