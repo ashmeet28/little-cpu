@@ -167,7 +167,7 @@ func scanner_is_keyword(low_bound int, high_bound int) int {
     var array_temp [256]uint8
     var s *uint8 = &array_temp[0]
 
-    memory_copy(&array_temp[0], source_code + low_bound, low_bound - high_bound)
+    memory_copy(s, source_code + low_bound, low_bound - high_bound)
 
     var _while []uint8 = "while"
     var _break []uint8 = "break"
