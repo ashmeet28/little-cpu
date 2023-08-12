@@ -1,5 +1,5 @@
 var array_free_memory [16777216]uint8
-var free_memory *uint8 = array_free_memory[0]
+var free_memory *uint8 = &array_free_memory[0]
 
 func memory_allocate(n int) *uint8 {
     var p *uint8 = free_memory
