@@ -1,14 +1,14 @@
 var array_free_memory [16777216]uint8
 var free_memory *uint8 = array_free_memory[0]
 
-func memory_allocate(amount int) *uint8 {
+func memory_allocate(n int) *uint8 {
     var p *uint8 = free_memory
 
-    if (amount & 0x3) != 0 {
-        amount = amount + 4 - (amount & 0x3)
+    if (n & 0x3) != 0 {
+        n = n + 4 - (n & 0x3)
     }
 
-    free_memory = free_memory + amount
+    free_memory = free_memory + n
 
     return p
 }
@@ -35,6 +35,37 @@ func read_stream(stream int, buffer *uint8, buffer_size int) int {
     bytes_count = *p
 
     return bytes_count
+}
+
+func memory_copy(s1 *uint8, s2 *uint8, n int) {
+    var i int
+    while i != n {
+        *(s1 + i) = *(s2 + i)
+        i = i + 1
+    }
+}
+
+func strings_compare(a *uint8, b *uint8) int {
+    var i int
+    var x uint8
+    var y uint8
+
+    while 1 {
+        x = *(a + i)
+        y = *(b + i)
+        if x == y && x != 0 && y != 0 {
+            i = i + 1
+            continue
+        }
+
+        if x == y {
+            return 0
+        } else if x < y {
+            return -1
+        } else if x > y {
+            return 1
+        }
+    }
 }
 
 // Tokens
@@ -92,17 +123,12 @@ var T_IF int = 39
 var T_ELSE int = 40
 var T_FUNC int = 41
 var T_RETURN int = 42
-var T_STRUCT int = 43
-var T_TYPE int = 44
-var T_VAR int = 45
+var T_VAR int = 43
 
-var T_SPACE = 46
-var T_NEW_LINE = 47
+var T_SPACE = 44
+var T_NEW_LINE = 45
 
-var T_EOF int = 48
-
-func strings_compare(a *uint8, b *uint8) int {
-}
+var T_EOF int = 46
 
 var scanner_current int
 
@@ -138,18 +164,47 @@ func scanner_is_alphabet(c uinb8) uint8 {
 }
 
 func scanner_is_keyword(low_bound int, high_bound int) int {
+    var array_temp [256]uint8
+    var s *uint8 = &array_temp[0]
+
+    memory_copy(&array_temp[0], source_code + low_bound, low_bound - high_bound)
+
+    var _while []uint8 = "while"
+    var _break []uint8 = "break"
+    var _continue []uint8 = "continue"
+    var _if []uint8 = "if"
+    var _else []uint8 = "else"
+    var _func []uint8 = "func"
+    var _return []uint8 = "return"
+    var _var []uint8 = "var"
+
+    if strings_compare(s, &_while[0]) == 0 {
+        return T_WHILE
+    } else if strings_compare(s, &_break[0]) {
+        return T_BREAK
+    } else if strings_compare(s, &_continue[0]) {
+        return T_CONTINUE
+    } else if strings_compare(s, &_if[0]) {
+        return T_IF
+    } else if strings_compare(s, &_else[0]) {
+        return T_ELSE
+    } else if strings_compare(s, &_func[0]) {
+        return T_FUNC
+    } else if strings_compare(s, &_return[0]) {
+        return T_RETURN
+    } else if strings_compare(s, &_var[0]) {
+        return T_VAR
+    } else {
+        return T_ILLEGAL
+    }
 }
 
 func scanner_scan_token() [4]int {
     var token [4]int
 
-    var scanner_start int
+    var scanner_start int = scanner_current
 
-    var c uint8
-
-    scanner_start = scanner_current
-
-    c = scanner_advance()
+    var c uint8 = scanner_advance()
 
     if c == '+' {
 
@@ -303,6 +358,11 @@ func scanner_scan_token() [4]int {
         token[0] = T_IDENT
         token[1] = scanner_start
         token[2] = scanner_current
+
+        var keyword_type int = scanner_is_keyword(scanner_start, scanner_current)
+        if keyword_type != T_ILLEGAL {
+            token[0] = keyword_type
+        }
 
     }
 
