@@ -1,87 +1,17 @@
-var array_source_code [65536]uint8
-var array_byte_code [65536]uint8
+var array_free_memory [16777216]uint8
+var free_memory *uint8 = array_free_memory[0]
 
-var source_code *uint8
-var byte_code *uint8
+func memory_allocate(amount int) *uint8 {
+    var p *uint8 = free_memory
 
-// Tokens
+    if (amount & 0x3) != 0 {
+        amount = amount + 4 - (amount & 0x3)
+    }
 
-var T_ILLEGAL int = 0
+    free_memory = free_memory + amount
 
-var T_COMMENT int = 1
-
-var T_IDENT int = 2
-var T_INT int = 3
-var T_CHAR int = 4
-var T_STRING int = 5
-
-var T_ADD int = 6
-var T_SUB int = 7
-var T_MUL int = 8
-var T_QUO int = 9
-var T_REM int = 10
-
-var T_AND int = 11
-var T_OR int = 12
-var T_XOR int = 13
-var T_SHL int = 14
-var T_SHR int = 15
-
-var T_ADD_ASSIGN int = 16
-var T_SUB_ASSIGN int = 17
-var T_MUL_ASSIGN int = 18
-var T_QUO_ASSIGN int = 19
-var T_REM_ASSIGN int = 20
-
-var T_AND_ASSIGN int = 21
-var T_OR_ASSIGN int = 22
-var T_XOR_ASSIGN int = 23
-var T_SHL_ASSIGN int = 24
-var T_SHR_ASSIGN int = 25
-
-var T_LAND int = 26
-var T_LOR int = 27
-var T_ARROW int = 28
-var T_INC int = 29
-var T_DEC int = 30
-
-var T_EQL int = 31
-var T_LSS int = 32
-var T_GTR int = 33
-var T_ASSIGN int = 34
-var T_NOT int = 35
-
-var T_NEQ int = 36
-var T_LEQ int = 37
-var T_GEQ int = 38
-
-var T_LPAREN int = 39
-var T_LBRACK int = 40
-var T_LBRACE int = 41
-var T_COMMA int = 42
-var T_PERIOD int = 43
-
-var T_RPAREN int = 44
-var T_RBRACK int = 45
-var T_RBRACE int = 46
-var T_SEMICOLON int = 47
-var T_COLON int = 48
-
-var T_WHILE int = 49
-var T_BREAK int = 50
-var T_CONTINUE int = 51
-var T_IF int = 52
-var T_ELSE int = 53
-var T_FUNC int = 54
-var T_RETURN int = 55
-var T_STRUCT int = 56
-var T_TYPE int = 57
-var T_VAR int = 58
-
-var T_SPACE = 59
-var T_NEW_LINE = 60
-
-var T_EOF int = 61
+    return p
+}
 
 func read_stream(stream int, buffer *uint8, buffer_size int) int {
     var p *int
@@ -107,168 +37,107 @@ func read_stream(stream int, buffer *uint8, buffer_size int) int {
     return bytes_count
 }
 
+// Tokens
+
+var T_ILLEGAL int = 0
+
+var T_COMMENT int = 1
+
+var T_IDENT int = 2
+var T_INT int = 3
+var T_CHAR int = 4
+var T_STRING int = 5
+
+var T_ADD int = 6
+var T_SUB int = 7
+var T_MUL int = 8
+var T_QUO int = 9
+var T_REM int = 10
+
+var T_AND int = 11
+var T_OR int = 12
+var T_XOR int = 13
+var T_SHL int = 14
+var T_SHR int = 15
+
+var T_LAND int = 16
+var T_LOR int = 17
+
+var T_EQL int = 18
+var T_LSS int = 19
+var T_GTR int = 20
+var T_ASSIGN int = 21
+var T_NOT int = 22
+
+var T_NEQ int = 23
+var T_LEQ int = 24
+var T_GEQ int = 25
+
+var T_LPAREN int = 26
+var T_LBRACK int = 27
+var T_LBRACE int = 28
+var T_COMMA int = 29
+var T_PERIOD int = 30
+
+var T_RPAREN int = 31
+var T_RBRACK int = 32
+var T_RBRACE int = 33
+var T_SEMICOLON int = 34
+var T_COLON int = 35
+
+var T_WHILE int = 36
+var T_BREAK int = 37
+var T_CONTINUE int = 38
+var T_IF int = 39
+var T_ELSE int = 40
+var T_FUNC int = 41
+var T_RETURN int = 42
+var T_STRUCT int = 43
+var T_TYPE int = 44
+var T_VAR int = 45
+
+var T_SPACE = 46
+var T_NEW_LINE = 47
+
+var T_EOF int = 48
+
+func strings_compare(a *uint8, b *uint8) int {
+}
+
 var scanner_current int
 
-func scanner_is_at_end() uint8 {
-    var c uint8
-    var p *uint
+var source_code *uint8
+var byte_code *uint8
 
-    p = source_code + scanner_current
-    c = *p
-    if c {
-        return 1
-    } else {
-        return 0
-    }
+func scanner_is_at_end() uint8 {
+    return (*(source_code + scanner_current)) == 0
 }
 
 func scanner_advance() uint8 {
-    var c uint8
-    var p *uint
+    var c uint8 = *(source_code + scanner_current)
 
-    p = source_code + scanner_current
-    c = *p
     scanner_current = scanner_current + 1
 
     return c
 }
 
 func scanner_peek() uint8 {
-    var c uint8
-    var p *uint8
-
-    p = source_code + scanner_current
-    p = p + 1
-    c = *p
-
-    return c
+    return *(source_code + scanner_current)
 }
 
 func scanner_is_digit(c uint8) uint8 {
-    var b1 uint8
-    var b2 uint8
-    var b3 uint8
-
-    b1 = c >= 0x30
-    b2 = c <= 0x39
-    b3 = b1 && b2
-
-    return b3
+    return c >= 0x30 && c <= 0x39
 }
 
 func scanner_is_printable(c uinb8) uint8 {
-    var b1 uinb8
-    var b2 uinb8
-    var b3 uinb8
-
-    b1 = c >= 0x20
-    b2 = c <= 0x7e
-    b3 = b1 && b2
-
-    return b3
+    return c >= 0x20 && c <= 0x7e
 }
 
 func scanner_is_alphabet(c uinb8) uint8 {
-    var b1 uinb8
-    var b2 uinb8
-    var b3 uinb8
-    var b4 uinb8
-    var b5 uinb8
-    var b6 uinb8
-    var b7 uinb8
-    var b8 uint8
-    var b9 uinb8
-
-    b1 = c >= 0x41
-    b2 = c <= 0x5a
-    b3 = c >= 0x61
-    b4 = c <= 0x7a
-    b5 = c == 0x5f
-    b6 = b1 && b2
-    b7 = b3 && b4
-    b8 = b6 || b7
-    b9 = b8 || b5
-
-    return b9
+    return (v[0] >= 0x41 && v[0] <= 0x5a) || (v[0] >= 0x61 && v[0] <= 0x7a) || (v[0] == 0x5f)
 }
 
-var array_scanner_keywords uint8[58]
-var scanner_keywords *uint8
-
-func scanner_init_keywords() {
-    array_scanner_keywords[0] = 'w'
-    array_scanner_keywords[1] = 'h'
-    array_scanner_keywords[2] = 'i'
-    array_scanner_keywords[3] = 'l'
-    array_scanner_keywords[4] = 'e'
-    array_scanner_keywords[5] = '\x0a'
-
-    array_scanner_keywords[6] = 'b'
-    array_scanner_keywords[7] = 'r'
-    array_scanner_keywords[8] = 'e'
-    array_scanner_keywords[9] = 'a'
-    array_scanner_keywords[10] = 'k'
-    array_scanner_keywords[11] = '\x0a'
-
-    array_scanner_keywords[12] = 'c'
-    array_scanner_keywords[13] = 'o'
-    array_scanner_keywords[14] = 'n'
-    array_scanner_keywords[15] = 't'
-    array_scanner_keywords[16] = 'i'
-    array_scanner_keywords[17] = 'n'
-    array_scanner_keywords[18] = 'u'
-    array_scanner_keywords[19] = 'e'
-    array_scanner_keywords[20] = '\x0a'
-
-    array_scanner_keywords[21] = 'i'
-    array_scanner_keywords[22] = 'f'
-    array_scanner_keywords[23] = '\x0a'
-
-    array_scanner_keywords[24] = 'e'
-    array_scanner_keywords[25] = 'l'
-    array_scanner_keywords[26] = 's'
-    array_scanner_keywords[27] = 'e'
-    array_scanner_keywords[28] = '\x0a'
-
-    array_scanner_keywords[29] = 'f'
-    array_scanner_keywords[30] = 'u'
-    array_scanner_keywords[31] = 'n'
-    array_scanner_keywords[32] = 'c'
-    array_scanner_keywords[33] = '\x0a'
-
-    array_scanner_keywords[34] = 'r'
-    array_scanner_keywords[35] = 'e'
-    array_scanner_keywords[36] = 't'
-    array_scanner_keywords[37] = 'u'
-    array_scanner_keywords[38] = 'r'
-    array_scanner_keywords[39] = 'n'
-    array_scanner_keywords[40] = '\x0a'
-
-    array_scanner_keywords[41] = 's'
-    array_scanner_keywords[42] = 't'
-    array_scanner_keywords[43] = 'r'
-    array_scanner_keywords[44] = 'u'
-    array_scanner_keywords[45] = 'c'
-    array_scanner_keywords[46] = 't'
-    array_scanner_keywords[47] = '\x0a'
-
-    array_scanner_keywords[48] = 't'
-    array_scanner_keywords[49] = 'y'
-    array_scanner_keywords[50] = 'p'
-    array_scanner_keywords[51] = 'e'
-    array_scanner_keywords[52] = '\x0a'
-
-    array_scanner_keywords[53] = 'v'
-    array_scanner_keywords[54] = 'a'
-    array_scanner_keywords[55] = 'r'
-    array_scanner_keywords[56] = '\x0a'
-
-    array_scanner_keywords[57] = '\x00'
-
-    scanner_keywords = &array_scanner_keywords[0]
-}
-
-func scanner_check_for_keyword(low_bound int, high_bound int) int {
+func scanner_is_keyword(low_bound int, high_bound int) int {
 }
 
 func scanner_scan_token() [4]int {
@@ -516,9 +385,8 @@ func scanner_scan_token() [4]int {
 }
 
 func init_global_variables() {
-    source_code = &array_source_code[0]
-    byte_code = &byte_code_array[0]
-    scanner_init_keywords()
+    source_code = memory_allocate(65536)
+    byte_code = memory_allocate(65536)
 }
 
 func main() {
