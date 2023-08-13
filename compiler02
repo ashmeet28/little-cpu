@@ -1,5 +1,5 @@
 var array_free_memory [16777216]uint8
-var free_memory *uint8 = &array_free_memory[0]
+var free_memory *uint8 = &(array_free_memory[0])
 
 func memory_allocate(n int) *uint8 {
     var p *uint8 = free_memory
@@ -159,13 +159,13 @@ func scanner_is_printable(c uinb8) uint8 {
     return c >= 0x20 && c <= 0x7e
 }
 
-func scanner_is_alphabet(c uinb8) uint8 {
-    return (v[0] >= 0x41 && v[0] <= 0x5a) || (v[0] >= 0x61 && v[0] <= 0x7a) || (v[0] == 0x5f)
+func scanner_is_alphabet(c uint8) uint8 {
+    return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || (c == 0x5f)
 }
 
 func scanner_is_keyword(low_bound int, high_bound int) int {
     var array_temp [256]uint8
-    var s *uint8 = &array_temp[0]
+    var s *uint8 = &(array_temp[0])
 
     memory_copy(s, source_code + low_bound, low_bound - high_bound)
 
@@ -178,21 +178,21 @@ func scanner_is_keyword(low_bound int, high_bound int) int {
     var _return []uint8 = "return"
     var _var []uint8 = "var"
 
-    if strings_compare(s, &_while[0]) == 0 {
+    if strings_compare(s, &(_while[0])) == 0 {
         return T_WHILE
-    } else if strings_compare(s, &_break[0]) {
+    } else if strings_compare(s, &(_break[0])) {
         return T_BREAK
-    } else if strings_compare(s, &_continue[0]) {
+    } else if strings_compare(s, &(_continue[0])) {
         return T_CONTINUE
-    } else if strings_compare(s, &_if[0]) {
+    } else if strings_compare(s, &(_if[0])) {
         return T_IF
-    } else if strings_compare(s, &_else[0]) {
+    } else if strings_compare(s, &(_else[0])) {
         return T_ELSE
-    } else if strings_compare(s, &_func[0]) {
+    } else if strings_compare(s, &(_func[0])) {
         return T_FUNC
-    } else if strings_compare(s, &_return[0]) {
+    } else if strings_compare(s, &(_return[0])) {
         return T_RETURN
-    } else if strings_compare(s, &_var[0]) {
+    } else if strings_compare(s, &(_var[0])) {
         return T_VAR
     } else {
         return T_ILLEGAL
