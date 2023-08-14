@@ -13,30 +13,6 @@ func memory_allocate(n int) *uint8 {
     return p
 }
 
-func read_stream(stream int, buffer *uint8, buffer_size int) int {
-    var p *int
-    var bytes_count int
-
-    p = 0x1000
-    *p = 2
-
-    p = 0x1004
-    *p = stream
-
-    p = 0x1008
-    *p = int(buffer)
-
-    p = 0x100c
-    *p = buffer_size
-
-    ecall()
-
-    p = 0x2004
-    bytes_count = *p
-
-    return bytes_count
-}
-
 func memory_copy(s1 *uint8, s2 *uint8, n int) {
     var i int
     while i != n {
@@ -66,6 +42,30 @@ func strings_compare(a *uint8, b *uint8) int {
             return 1
         }
     }
+}
+
+func read_stream(stream int, buffer *uint8, buffer_size int) int {
+    var p *int
+    var bytes_count int
+
+    p = 0x1000
+    *p = 2
+
+    p = 0x1004
+    *p = stream
+
+    p = 0x1008
+    *p = int(buffer)
+
+    p = 0x100c
+    *p = buffer_size
+
+    ecall()
+
+    p = 0x2004
+    bytes_count = *p
+
+    return bytes_count
 }
 
 // Tokens
@@ -197,6 +197,7 @@ func scanner_is_keyword(low_bound int, high_bound int) int {
     } else {
         return T_ILLEGAL
     }
+
 }
 
 func scanner_scan_token() [4]int {
@@ -367,6 +368,13 @@ func scanner_scan_token() [4]int {
     }
 
     return token
+}
+
+var compiler_global_var_table *int
+var compiler_local_var_table *int
+var compiler_func_table *int
+
+func compiler_start() {
 }
 
 func init_global_variables() {
