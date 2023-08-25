@@ -180,19 +180,19 @@ func scanner_is_keyword(low_bound int, high_bound int) int {
 
     if strings_compare(s, &(_while[0])) == 0 {
         return T_WHILE
-    } else if strings_compare(s, &(_break[0])) {
+    } else if strings_compare(s, &(_break[0])) == 0 {
         return T_BREAK
-    } else if strings_compare(s, &(_continue[0])) {
+    } else if strings_compare(s, &(_continue[0])) == 0 {
         return T_CONTINUE
-    } else if strings_compare(s, &(_if[0])) {
+    } else if strings_compare(s, &(_if[0])) == 0 {
         return T_IF
-    } else if strings_compare(s, &(_else[0])) {
+    } else if strings_compare(s, &(_else[0])) == 0 {
         return T_ELSE
-    } else if strings_compare(s, &(_func[0])) {
+    } else if strings_compare(s, &(_func[0])) == 0 {
         return T_FUNC
-    } else if strings_compare(s, &(_return[0])) {
+    } else if strings_compare(s, &(_return[0])) == 0 {
         return T_RETURN
-    } else if strings_compare(s, &(_var[0])) {
+    } else if strings_compare(s, &(_var[0])) == 0 {
         return T_VAR
     } else {
         return T_ILLEGAL
