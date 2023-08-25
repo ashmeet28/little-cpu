@@ -337,7 +337,7 @@ func scanner_scan_token() [4]int {
 
     } else if c == '\n' {
 
-        while scanner_peek() == '\n' || scanner_peek() == ' ' {
+        while scanner_peek() == '\n' {
             scanner_advance()
         }
         token[0] = T_NEW_LINE
@@ -370,9 +370,8 @@ func scanner_scan_token() [4]int {
     return token
 }
 
-var compiler_global_var_table *int
-var compiler_local_var_table *int
-var compiler_func_table *int
+var compiler_table_global *int
+var compiler_table_local *int
 
 func compiler_start() {
 }
