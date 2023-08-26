@@ -405,8 +405,6 @@ func compiler_continue() {
 
     if token_type == T_VAR {
         compiler_compile_var()
-    } else if token_type == T_SPACE {
-        return
     }
 }
 
