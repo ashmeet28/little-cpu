@@ -44,6 +44,14 @@ func strings_compare(a *uint8, b *uint8) int {
     }
 }
 
+func string_length(s *uint8) int {
+    var i int
+    while (*(s + i)) != 0 {
+        i = i + 1
+    }
+    return i
+}
+
 func read_stream(stream int, buffer *uint8, buffer_size int) int {
     var p *int
     var bytes_count int
@@ -130,10 +138,12 @@ var T_NEW_LINE = 45
 
 var T_EOF int = 46
 
-var scanner_current int
-
 var source_code *uint8
 var byte_code *uint8
+
+var scanner_current int
+
+var scanner_strings *uint8
 
 func scanner_is_at_end() uint8 {
     return (*(source_code + scanner_current)) == 0
@@ -163,11 +173,27 @@ func scanner_is_alphabet(c uint8) uint8 {
     return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || (c == 0x5f)
 }
 
+func scanner_strings_add(low_bound int, high_bound int) int {
+    var i int
+    var j int
+    var l int
+
+    l = string_length(scanner_strings + i)
+    while l != 0 {
+        i = i + l + 1
+        j = j + 1
+        l = string_length(scanner_strings + i)
+    }
+
+    memory_copy(scanner_strings + i, source_code + low_bound, high_bound - low_bound)
+    return j
+}
+
 func scanner_is_keyword(low_bound int, high_bound int) int {
     var array_temp [256]uint8
     var s *uint8 = &(array_temp[0])
 
-    memory_copy(s, source_code + low_bound, low_bound - high_bound)
+    memory_copy(s, source_code + low_bound, high_bound - low_bound)
 
     var _while []uint8 = "while"
     var _break []uint8 = "break"
@@ -200,8 +226,8 @@ func scanner_is_keyword(low_bound int, high_bound int) int {
 
 }
 
-func scanner_scan_token() [4]int {
-    var token [4]int
+func scanner_scan_token() [2]int {
+    var token [2]int
 
     var scanner_start int = scanner_current
 
@@ -348,8 +374,6 @@ func scanner_scan_token() [4]int {
             scanner_advance()
         }
         token[0] = T_INT
-        token[1] = scanner_start
-        token[2] = scanner_current
 
     } else if scanner_is_alphabet(c) {
 
@@ -357,8 +381,6 @@ func scanner_scan_token() [4]int {
             scanner_advance()
         }
         token[0] = T_IDENT
-        token[1] = scanner_start
-        token[2] = scanner_current
 
         var keyword_type int = scanner_is_keyword(scanner_start, scanner_current)
         if keyword_type != T_ILLEGAL {
@@ -372,15 +394,35 @@ func scanner_scan_token() [4]int {
 
 var compiler_table_global *int
 var compiler_table_local *int
+var compiler_current_token [2]int
 
-func compiler_start() {
+func compiler_compile_var() {
 }
 
-func init_global_variables() {
+func compiler_continue() {
+    compiler_current_token = scanner_scan_token()
+    var token_type int = compiler_current_token[0]
+
+    if token_type == T_VAR {
+        compiler_compile_var()
+    } else if token_type == T_SPACE {
+        return
+    }
+}
+
+func compiler_start() {
+    compiler_continue()
+}
+
+func compiler_init() {
     source_code = memory_allocate(65536)
     byte_code = memory_allocate(65536)
+
+    read_stream(0, source_code, 65536)
+
+    scanner_strings = memory_allocate(65536)
 }
 
 func main() {
-    init_global_variables()
+    compiler_init()
 }
