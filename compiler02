@@ -52,7 +52,7 @@ func string_length(s *uint8) int {
     return i
 }
 
-func read_stream(stream int, buffer *uint8, buffer_size int) int {
+func stream_read(stream int, buffer *uint8, buffer_size int) int {
     var p *int
     var bytes_count int
 
@@ -370,14 +370,14 @@ func scanner_scan_token() [2]int {
 
     } else if scanner_is_digit(c) {
 
-        while scanner_peek() != '\n' && scanner_peek() != ' ' {
+        while scanner_is_digit(scanner_peek()) {
             scanner_advance()
         }
         token[0] = T_INT
 
     } else if scanner_is_alphabet(c) {
 
-        while scanner_peek() != '\n' && scanner_peek() != ' ' {
+        while scanner_is_alphabet(scanner_peek()) || scanner_is_digit(scanner_peek()) {
             scanner_advance()
         }
         token[0] = T_IDENT
@@ -416,7 +416,7 @@ func compiler_init() {
     source_code = memory_allocate(65536)
     byte_code = memory_allocate(65536)
 
-    read_stream(0, source_code, 65536)
+    stream_read(0, source_code, 65536)
 
     scanner_strings = memory_allocate(65536)
 }
