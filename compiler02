@@ -31,10 +31,7 @@ func strings_compare(a *uint8, b *uint8) int {
         y = *(b + i)
         if x == y && x != 0 && y != 0 {
             i = i + 1
-            continue
-        }
-
-        if x == y {
+        } else if x == y {
             return 0
         } else if x < y {
             return -1
@@ -58,6 +55,7 @@ var STANDARD_ERROR int = 2
 
 func stream_read(stream int, buffer *uint8, buffer_size int) int {
     var p *int
+    var d_p **uint8
     var bytes_count int
 
     p = 0x1000
@@ -67,7 +65,7 @@ func stream_read(stream int, buffer *uint8, buffer_size int) int {
     *p = stream
 
     p = 0x1008
-    *p = int(buffer)
+    *d_p = buffer
 
     p = 0x100c
     *p = buffer_size
