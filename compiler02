@@ -52,6 +52,10 @@ func string_length(s *uint8) int {
     return i
 }
 
+var STANDARD_INPUT int = 0
+var STANDARD_OUTPUT int = 1
+var STANDARD_ERROR int = 2
+
 func stream_read(stream int, buffer *uint8, buffer_size int) int {
     var p *int
     var bytes_count int
@@ -394,16 +398,15 @@ func scanner_scan_token() [2]int {
 
 var compiler_table_global *int
 var compiler_table_local *int
-var compiler_current_token [2]int
+var compiler_is_compiling_function uint8
 
 func compiler_compile_var() {
 }
 
 func compiler_continue() {
-    compiler_current_token = scanner_scan_token()
-    var token_type int = compiler_current_token[0]
+    vat token [2]int = scanner_scan_token()
 
-    if token_type == T_VAR {
+    if token[0] == T_VAR {
         compiler_compile_var()
     }
 }
@@ -416,7 +419,7 @@ func compiler_init() {
     source_code = memory_allocate(65536)
     byte_code = memory_allocate(65536)
 
-    stream_read(0, source_code, 65536)
+    stream_read(STANDARD_INPUT, source_code, 65536)
 
     scanner_strings = memory_allocate(65536)
 }
