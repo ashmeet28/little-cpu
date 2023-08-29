@@ -374,7 +374,7 @@ func scanner_scan_token() [2]int {
 
     } else if scanner_is_digit(c) {
 
-        while scanner_peek() != '\n' && scanner_peek() != ' ' {
+        while scanner_is_alphabet(scanner_peek()) || scanner_is_digit(scanner_peek()) {
             scanner_advance()
         }
         token[0] = T_INT
