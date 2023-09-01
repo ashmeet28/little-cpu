@@ -402,7 +402,7 @@ func compiler_compile_var() {
 }
 
 func compiler_continue() {
-    vat token [2]int = scanner_scan_token()
+    var token [2]int = scanner_scan_token()
 
     if token[0] == T_VAR {
         compiler_compile_var()
