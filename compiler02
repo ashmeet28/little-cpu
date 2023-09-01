@@ -64,7 +64,7 @@ func stream_read(stream int, buffer *uint8, buffer_size int) int {
     p = 0x1004
     *p = stream
 
-    p = 0x1008
+    d_p = 0x1008
     *d_p = buffer
 
     p = 0x100c
