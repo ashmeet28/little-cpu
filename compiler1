@@ -80,65 +80,65 @@ func stream_read(stream int, buffer *uint8, buffer_size int) int {
 
 // Tokens
 
-var T_ILLEGAL int = 0
+var TT_ILLEGAL int = 0
 
-var T_COMMENT int = 1
+var TT_COMMENT int = 1
 
-var T_IDENT int = 2
-var T_INT int = 3
-var T_CHAR int = 4
-var T_STRING int = 5
+var TT_IDENT int = 2
+var TT_INT int = 3
+var TT_CHAR int = 4
+var TT_STRING int = 5
 
-var T_ADD int = 6
-var T_SUB int = 7
-var T_MUL int = 8
-var T_QUO int = 9
-var T_REM int = 10
+var TT_ADD int = 6
+var TT_SUB int = 7
+var TT_MUL int = 8
+var TT_QUO int = 9
+var TT_REM int = 10
 
-var T_AND int = 11
-var T_OR int = 12
-var T_XOR int = 13
-var T_SHL int = 14
-var T_SHR int = 15
+var TT_AND int = 11
+var TT_OR int = 12
+var TT_XOR int = 13
+var TT_SHL int = 14
+var TT_SHR int = 15
 
-var T_LAND int = 16
-var T_LOR int = 17
+var TT_LAND int = 16
+var TT_LOR int = 17
 
-var T_EQL int = 18
-var T_LSS int = 19
-var T_GTR int = 20
-var T_ASSIGN int = 21
-var T_NOT int = 22
+var TT_EQL int = 18
+var TT_LSS int = 19
+var TT_GTR int = 20
+var TT_ASSIGN int = 21
+var TT_NOT int = 22
 
-var T_NEQ int = 23
-var T_LEQ int = 24
-var T_GEQ int = 25
+var TT_NEQ int = 23
+var TT_LEQ int = 24
+var TT_GEQ int = 25
 
-var T_LPAREN int = 26
-var T_LBRACK int = 27
-var T_LBRACE int = 28
-var T_COMMA int = 29
-var T_PERIOD int = 30
+var TT_LPAREN int = 26
+var TT_LBRACK int = 27
+var TT_LBRACE int = 28
+var TT_COMMA int = 29
+var TT_PERIOD int = 30
 
-var T_RPAREN int = 31
-var T_RBRACK int = 32
-var T_RBRACE int = 33
-var T_SEMICOLON int = 34
-var T_COLON int = 35
+var TT_RPAREN int = 31
+var TT_RBRACK int = 32
+var TT_RBRACE int = 33
+var TT_SEMICOLON int = 34
+var TT_COLON int = 35
 
-var T_WHILE int = 36
-var T_BREAK int = 37
-var T_CONTINUE int = 38
-var T_IF int = 39
-var T_ELSE int = 40
-var T_FUNC int = 41
-var T_RETURN int = 42
-var T_VAR int = 43
+var TT_WHILE int = 36
+var TT_BREAK int = 37
+var TT_CONTINUE int = 38
+var TT_IF int = 39
+var TT_ELSE int = 40
+var TT_FUNC int = 41
+var TT_RETURN int = 42
+var TT_VAR int = 43
 
-var T_SPACE = 44
-var T_NEW_LINE = 45
+var TT_SPACE = 44
+var TT_NEW_LINE = 45
 
-var T_EOF int = 46
+var TT_EOF int = 46
 
 var source_code *uint8
 var byte_code *uint8
@@ -219,27 +219,35 @@ func scanner_is_keyword(low_bound int, high_bound int) int {
     var _var_ []uint8 = "var"
 
     if strings_compare(s, &(_while_[0])) == 0 {
-        return T_WHILE
+        return TT_WHILE
     } else if strings_compare(s, &(_break_[0])) == 0 {
-        return T_BREAK
+        return TT_BREAK
     } else if strings_compare(s, &(_continue_[0])) == 0 {
-        return T_CONTINUE
+        return TT_CONTINUE
     } else if strings_compare(s, &(_if_[0])) == 0 {
-        return T_IF
+        return TT_IF
     } else if strings_compare(s, &(_else_[0])) == 0 {
-        return T_ELSE
+        return TT_ELSE
     } else if strings_compare(s, &(_func_[0])) == 0 {
-        return T_FUNC
+        return TT_FUNC
     } else if strings_compare(s, &(_return_[0])) == 0 {
-        return T_RETURN
+        return TT_RETURN
     } else if strings_compare(s, &(_var_[0])) == 0 {
-        return T_VAR
+        return TT_VAR
     } else {
-        return T_ILLEGAL
+        return TT_ILLEGAL
+    }
+}
+
+func scanner_skip_spaces() {
+    while scanner_peek() == ' ' {
+        scanner_advance()
     }
 }
 
 func scanner_scan_token() [2]int {
+    scanner_skip_spaces()
+
     var token [2]int
 
     var scanner_start int = scanner_current
@@ -248,15 +256,15 @@ func scanner_scan_token() [2]int {
 
     if c == '+' {
 
-        token[0] = T_ADD
+        token[0] = TT_ADD
 
     } else if c == '-' {
 
-        token[0] = T_SUB
+        token[0] = TT_SUB
 
     } else if c == '*' {
 
-        token[0] = T_MUL
+        token[0] = TT_MUL
 
     } else if c == '/' {
 
@@ -265,139 +273,143 @@ func scanner_scan_token() [2]int {
             while scanner_peek() != '\n' {
                 scanner_advance()
             }
-            token[0] = T_COMMENT
+            token[0] = TT_COMMENT
         } else {
-            token[0] = T_QUO
+            token[0] = TT_QUO
         }
 
     } else if c == '%' {
 
-        token[0] = T_REM
+        token[0] = TT_REM
 
     } else if c == '&' {
 
         if scanner_peek() == '&' {
             scanner_advance()
-            token[0] = T_LAND
+            token[0] = TT_LAND
         } else {
-            token[0] = T_ADD
+            token[0] = TT_ADD
         }
 
     } else if c == '|' {
 
         if scanner_peek() == '|' {
             scanner_advance()
-            token[0] = T_LOR
+            token[0] = TT_LOR
         } else {
-            token[0] = T_OR
+            token[0] = TT_OR
         }
 
     } else if c == '^' {
 
-        token[0] = T_XOR
+        token[0] = TT_XOR
 
     } else if c == '<' {
 
         if scanner_peek() == '<' {
             scanner_advance()
-            token[0] = T_SHL
+            token[0] = TT_SHL
         } else {
-            token[0] = T_LSS
+            token[0] = TT_LSS
         }
 
     } else if c == '>' {
 
         if scanner_peek() == '>' {
             scanner_advance()
-            token[0] = T_SHR
+            token[0] = TT_SHR
         } else {
-            token[0] = T_GTR
+            token[0] = TT_GTR
         }
 
     } else if c == '=' {
 
         if scanner_peek() == '=' {
             scanner_advance()
-            token[0] = T_EQL
+            token[0] = TT_EQL
         } else {
-            token[0] = T_ASSIGN
+            token[0] = TT_ASSIGN
         }
 
     } else if c == '!' {
 
-        token[0] = T_NOT
+        token[0] = TT_NOT
 
     } else if c == '(' {
 
-        token[0] = T_LPAREN
+        token[0] = TT_LPAREN
 
     } else if c == '[' {
 
-        token[0] = T_LBRACK
+        token[0] = TT_LBRACK
 
     } else if c == '{' {
 
-        token[0] = T_LBRACE
+        token[0] = TT_LBRACE
 
     } else if c == ',' {
 
-        token[0] = T_COMMA
+        token[0] = TT_COMMA
 
     } else if c == '.' {
 
-        token[0] = T_PERIOD
+        token[0] = TT_PERIOD
 
     } else if c == ')' {
 
-        token[0] = T_RPAREN
+        token[0] = TT_RPAREN
 
     } else if c == ']' {
 
-        token[0] = T_RBRACK
+        token[0] = TT_RBRACK
 
     } else if c == '}' {
 
-        token[0] = T_RBRACE
+        token[0] = TT_RBRACE
 
     } else if c == ';' {
 
-        token[0] = T_SEMICOLON
+        token[0] = TT_SEMICOLON
 
     } else if c == ':' {
 
-        token[0] = T_COLON
+        token[0] = TT_COLON
 
     } else if c == ' ' {
 
         while scanner_peek() == ' ' {
             scanner_advance()
         }
-        token[0] = T_SPACE
+        token[0] = TT_SPACE
 
     } else if c == '\n' {
 
         while scanner_peek() == '\n' {
             scanner_advance()
         }
-        token[0] = T_NEW_LINE
+        token[0] = TT_NEW_LINE
 
     } else if scanner_is_digit(c) {
 
         while scanner_is_alphabet(scanner_peek()) || scanner_is_digit(scanner_peek()) {
             scanner_advance()
         }
-        token[0] = T_INT
+        token[0] = TT_INT
+        token[1] = scanner_strings_add_from_source_code(scanner_start, scanner_current)
 
     } else if scanner_is_alphabet(c) {
 
         while scanner_is_alphabet(scanner_peek()) || scanner_is_digit(scanner_peek()) {
             scanner_advance()
         }
-        token[0] = T_IDENT
 
-        var keyword_type int = scanner_is_keyword(scanner_start, scanner_current)
-        if keyword_type != T_ILLEGAL {
-            token[0] = keyword_type
+        var token_type int = scanner_is_keyword(scanner_start, scanner_current)
+
+        if token_type == TT_ILLEGAL {
+            token[0] = TT_IDENT
+            token[1] = scanner_strings_add_from_source_code(scanner_start, scanner_current)
+        } else {
+            token[0] = token_type
         }
 
     }
@@ -430,7 +442,7 @@ func compiler_compile_var() {
 func compiler_continue() {
     var token [2]int = scanner_scan_token()
 
-    if token[0] == T_VAR {
+    if token[0] == TT_VAR {
         compiler_compile_var()
     }
 }
