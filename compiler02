@@ -55,7 +55,7 @@ var STANDARD_ERROR int = 2
 
 func stream_read(stream int, buffer *uint8, buffer_size int) int {
     var p *int
-    var d_p **uint8
+    var dp **uint8
     var bytes_count int
 
     p = 0x1000
@@ -64,8 +64,8 @@ func stream_read(stream int, buffer *uint8, buffer_size int) int {
     p = 0x1004
     *p = stream
 
-    d_p = 0x1008
-    *d_p = buffer
+    dp = 0x1008
+    *dp = buffer
 
     p = 0x100c
     *p = buffer_size
