@@ -396,9 +396,13 @@ func scanner_scan_token() [2]int {
 
 var compiler_table_global *int
 var compiler_table_local *int
+
+// Table structure: Identifier string index, Variable type string index, Address, Is Pointer
+
 var compiler_is_compiling_function uint8
 
 func compiler_compile_var() {
+
 }
 
 func compiler_continue() {
