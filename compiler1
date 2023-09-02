@@ -434,9 +434,21 @@ var compiler_table_local *int
 
 // Table structure: Identifier string index, Variable type string index, Address, Is Pointer
 
-var compiler_is_compiling_function uint8
+var compiler_is_compiling_func uint8
+
+func compiler_table_add_global(identifier_string_index int, variable_type_string_index int, address int, is_pointer int) {
+}
+
+func compiler_compile_var_global() {
+    var token [2]int = scanner_scan_token()
+}
 
 func compiler_compile_var() {
+    if compiler_is_compiling_func {
+        compiler_compile_var_local()
+    } else {
+        compiler_compile_var_global()
+    }
 }
 
 func compiler_continue() {
