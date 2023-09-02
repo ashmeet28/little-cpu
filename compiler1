@@ -175,20 +175,32 @@ func scanner_is_alphabet(c uint8) uint8 {
     return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || (c == 0x5f)
 }
 
-func scanner_strings_add(low_bound int, high_bound int) int {
+func scanner_strings_add(s *uint8) int {
     var i int
-    var j int
     var l int
 
     l = string_length(scanner_strings + i)
     while l != 0 {
-        i = i + l + 1
-        j = j + 1
-        l = string_length(scanner_strings + i)
+        if strings_compare(scanner_strings + i, s) == 0 {
+            return i
+        } else {
+            i = i + l + 1
+            l = string_length(scanner_strings + i)
+        }
     }
 
-    memory_copy(scanner_strings + i, source_code + low_bound, high_bound - low_bound)
-    return j
+    memory_copy(scanner_strings + i, s, string_length(s))
+
+    return i
+}
+
+func scanner_strings_add_from_source_code(low_bound int, high_bound int) int {
+    var array_temp [256]uint8
+    var s *uint8 = &(array_temp[0])
+
+    memory_copy(s, source_code + low_bound, high_bound - low_bound)
+
+    return scanner_strings_add(s)
 }
 
 func scanner_is_keyword(low_bound int, high_bound int) int {
@@ -197,35 +209,34 @@ func scanner_is_keyword(low_bound int, high_bound int) int {
 
     memory_copy(s, source_code + low_bound, high_bound - low_bound)
 
-    var _while []uint8 = "while"
-    var _break []uint8 = "break"
-    var _continue []uint8 = "continue"
-    var _if []uint8 = "if"
-    var _else []uint8 = "else"
-    var _func []uint8 = "func"
-    var _return []uint8 = "return"
-    var _var []uint8 = "var"
+    var _while_ []uint8 = "while"
+    var _break_ []uint8 = "break"
+    var _continue_ []uint8 = "continue"
+    var _if_ []uint8 = "if"
+    var _else_ []uint8 = "else"
+    var _func_ []uint8 = "func"
+    var _return_ []uint8 = "return"
+    var _var_ []uint8 = "var"
 
-    if strings_compare(s, &(_while[0])) == 0 {
+    if strings_compare(s, &(_while_[0])) == 0 {
         return T_WHILE
-    } else if strings_compare(s, &(_break[0])) == 0 {
+    } else if strings_compare(s, &(_break_[0])) == 0 {
         return T_BREAK
-    } else if strings_compare(s, &(_continue[0])) == 0 {
+    } else if strings_compare(s, &(_continue_[0])) == 0 {
         return T_CONTINUE
-    } else if strings_compare(s, &(_if[0])) == 0 {
+    } else if strings_compare(s, &(_if_[0])) == 0 {
         return T_IF
-    } else if strings_compare(s, &(_else[0])) == 0 {
+    } else if strings_compare(s, &(_else_[0])) == 0 {
         return T_ELSE
-    } else if strings_compare(s, &(_func[0])) == 0 {
+    } else if strings_compare(s, &(_func_[0])) == 0 {
         return T_FUNC
-    } else if strings_compare(s, &(_return[0])) == 0 {
+    } else if strings_compare(s, &(_return_[0])) == 0 {
         return T_RETURN
-    } else if strings_compare(s, &(_var[0])) == 0 {
+    } else if strings_compare(s, &(_var_[0])) == 0 {
         return T_VAR
     } else {
         return T_ILLEGAL
     }
-
 }
 
 func scanner_scan_token() [2]int {
@@ -394,6 +405,18 @@ func scanner_scan_token() [2]int {
     return token
 }
 
+func scanner_init() {
+    source_code = memory_allocate(65536)
+    stream_read(STANDARD_INPUT, source_code, 65536)
+
+    scanner_strings = memory_allocate(65536)
+
+    var _uint8_ []uint8 = "uint8"
+    var _int_ []uint8 = "int"
+    scanner_strings_add(&(_uint8_[0]))
+    scanner_strings_add(&(_int_[0]))
+}
+
 var compiler_table_global *int
 var compiler_table_local *int
 
@@ -402,7 +425,6 @@ var compiler_table_local *int
 var compiler_is_compiling_function uint8
 
 func compiler_compile_var() {
-
 }
 
 func compiler_continue() {
@@ -418,14 +440,12 @@ func compiler_start() {
 }
 
 func compiler_init() {
-    source_code = memory_allocate(65536)
+    scanner_init()
+
     byte_code = memory_allocate(65536)
-
-    stream_read(STANDARD_INPUT, source_code, 65536)
-
-    scanner_strings = memory_allocate(65536)
 }
 
 func main() {
     compiler_init()
+    compiler_start()
 }
