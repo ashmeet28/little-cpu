@@ -147,6 +147,9 @@ var scanner_current int
 
 var scanner_strings *uint8
 
+var scanner_string_uint8 int
+var scanner_string_int int
+
 func scanner_is_at_end() uint8 {
     return (*(source_code + scanner_current)) == 0
 }
@@ -239,15 +242,7 @@ func scanner_is_keyword(low_bound int, high_bound int) int {
     }
 }
 
-func scanner_skip_spaces() {
-    while scanner_peek() == ' ' {
-        scanner_advance()
-    }
-}
-
 func scanner_scan_token() [2]int {
-    scanner_skip_spaces()
-
     var token [2]int
 
     var scanner_start int = scanner_current
@@ -414,7 +409,11 @@ func scanner_scan_token() [2]int {
 
     }
 
-    return token
+    if token[0] == TT_SPACE || token[0] == TT_COMMENT {
+        return scanner_scan_token()
+    } else {
+        return token
+    }
 }
 
 func scanner_init() {
@@ -425,18 +424,42 @@ func scanner_init() {
 
     var _uint8_ []uint8 = "uint8"
     var _int_ []uint8 = "int"
-    scanner_strings_add(&(_uint8_[0]))
-    scanner_strings_add(&(_int_[0]))
+    scanner_string_uint8 = scanner_strings_add(&(_uint8_[0]))
+    scanner_string_int = scanner_strings_add(&(_int_[0]))
 }
 
 var compiler_table_global *int
 var compiler_table_local *int
 
-// Table structure: Identifier, Variable type, Address, Is Pointer
+// Table structure:
+// Is Used, Identifier, Variable type, Address,
+// Integer size, Is Signed, Pointer level, Array capacity
 
 var compiler_is_compiling_func uint8
 
-func compiler_table_global_add(identifier int, variable_type int, address int, is_pointer int) {
+var compiler_global_variable_free_memory int
+
+func compiler_table_global_add(identifier int, variable_type int, pointer_level int, array_capacity) int {
+    var i int
+    var row *int
+    while (*(compiler_table_global + i)) != 0 {
+        i = i + 8
+    }
+    row = *(compiler_table_global + i)
+    *(row + 0) = 1
+    *(row + 1) = identifier
+    *(row + 2) = variable_type
+    *(row + 3) = compiler_global_variable_free_memory
+
+    if variable_type == scanner_string_uint8 {
+        *(row + 4) = 1
+    } else if variable_type == scanner_string_int {
+        *(row + 4) = 4
+        *(row + 5) = 1
+    }
+
+    *(row + 6) = pointer_level
+    *(row + 7) = array_capacity
 }
 
 func compiler_compile_var_global() {
