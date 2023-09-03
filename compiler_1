@@ -51,6 +51,20 @@ func string_length(s *uint8) int {
 
 func string_parse_int(s *uint8) int {
     var i int
+    var r int
+
+    var pow10 [10]int
+
+    pow10[0] = 1
+    pow10[1] = 10
+    pow10[2] = 100
+    pow10[3] = 1000
+    pow10[4] = 10000
+    pow10[5] = 100000
+    pow10[6] = 1000000
+    pow10[7] = 10000000
+    pow10[8] = 100000000
+    pow10[9] = 1000000000
 }
 
 var STANDARD_INPUT int = 0
@@ -486,6 +500,7 @@ func compiler_compile_var_global() {
             pointer_level = pointer_level + 1
             token = scanner_scan_token()
         }
+    } else if token[0] == TT_LBRACK {
     }
 
     variable_type = token_type[1]
