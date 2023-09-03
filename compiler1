@@ -49,6 +49,10 @@ func string_length(s *uint8) int {
     return i
 }
 
+func string_parse_int(s *uint8) int {
+    var i int
+}
+
 var STANDARD_INPUT int = 0
 var STANDARD_OUTPUT int = 1
 var STANDARD_ERROR int = 2
@@ -435,9 +439,9 @@ var compiler_table_local *int
 // Is Used, Identifier, Variable type, Address,
 // Integer size, Is Signed, Pointer level, Array capacity
 
-var compiler_is_compiling_func uint8
+var compiler_is_compiling_function uint8
 
-var compiler_global_variable_free_memory int
+var compiler_global_variables_free_memory int
 
 func compiler_table_global_add(identifier int, variable_type int, pointer_level int, array_capacity) int {
     var i int
@@ -449,14 +453,17 @@ func compiler_table_global_add(identifier int, variable_type int, pointer_level 
     *(row + 0) = 1
     *(row + 1) = identifier
     *(row + 2) = variable_type
-    *(row + 3) = compiler_global_variable_free_memory
+    *(row + 3) = compiler_global_variables_free_memory
 
     if variable_type == scanner_string_uint8 {
         *(row + 4) = 1
+        *(row + 5) = 0
     } else if variable_type == scanner_string_int {
         *(row + 4) = 4
         *(row + 5) = 1
     }
+
+    compiler_global_variables_free_memory = compiler_global_variables_free_memory + (*(row + 4))
 
     *(row + 6) = pointer_level
     *(row + 7) = array_capacity
@@ -464,10 +471,28 @@ func compiler_table_global_add(identifier int, variable_type int, pointer_level 
 
 func compiler_compile_var_global() {
     var token [2]int = scanner_scan_token()
+    var identifier = token[1]
+    var variable_type int
+    var pointer_level int
+    var array_capacity int
+
+    token = scanner_scan_token()
+
+    if token[0] == TT_MUL {
+        pointer_level = pointer_level + 1
+
+        token = scanner_scan_token()
+        while token[0] == TT_MUL {
+            pointer_level = pointer_level + 1
+            token = scanner_scan_token()
+        }
+    }
+
+    variable_type = token_type[1]
 }
 
 func compiler_compile_var() {
-    if compiler_is_compiling_func {
+    if compiler_is_compiling_function {
         compiler_compile_var_local()
     } else {
         compiler_compile_var_global()
