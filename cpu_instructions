@@ -21,7 +21,7 @@
 
 // 100 001 LUI  dest imm1 imm2
 // 100 010 LLI  dest imm1 imm2
-// 100 011 LLIU dest imm1 imm2
+// 100 110 LLIU dest imm1 imm2
 
 // 101 000 BEQ  offset src1 src2
 // 101 001 BNE  offset src1 src2
