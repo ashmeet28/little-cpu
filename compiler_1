@@ -461,6 +461,7 @@ func scanner_init() {
 
     var _uint8_ []uint8 = "uint8"
     var _int_ []uint8 = "int"
+
     scanner_string_uint8 = scanner_strings_add(&(_uint8_[0]))
     scanner_string_int = scanner_strings_add(&(_int_[0]))
 }
@@ -547,6 +548,9 @@ func compiler_start() {
 
 func compiler_init() {
     scanner_init()
+
+    compiler_table_global = (*int)(memory_allocate(65536)
+    compiler_table_local = (*int)(memory_allocate(65536)
 
     byte_code = memory_allocate(65536)
 }
