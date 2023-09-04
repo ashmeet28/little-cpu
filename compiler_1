@@ -1,3 +1,8 @@
+// This is the first self compiling compiler
+// It does not include error detection and optimization
+
+// SECTION: memory
+
 var array_free_memory [16777216]uint8
 var free_memory *uint8 = &(array_free_memory[0])
 
@@ -21,6 +26,8 @@ func memory_copy(s1 *uint8, s2 *uint8, n int) {
     }
 }
 
+// SECTION: strings
+
 func strings_compare(a *uint8, b *uint8) int {
     var i int
     var x uint8
@@ -40,6 +47,8 @@ func strings_compare(a *uint8, b *uint8) int {
         }
     }
 }
+
+// SECTION: string
 
 func string_length(s *uint8) int {
     var i int
@@ -86,6 +95,8 @@ func string_parse_int(s *uint8) int {
     }
 }
 
+// SECTION: stream
+
 var STANDARD_INPUT int = 0
 var STANDARD_OUTPUT int = 1
 var STANDARD_ERROR int = 2
@@ -115,7 +126,7 @@ func stream_read(stream int, buffer *uint8, buffer_size int) int {
     return bytes_count
 }
 
-// Tokens
+// SECTION: scanner
 
 var TT_ILLEGAL int = 0
 
@@ -455,6 +466,7 @@ func scanner_scan_token() [2]int {
 
 func scanner_init() {
     source_code = memory_allocate(65536)
+
     stream_read(STANDARD_INPUT, source_code, 65536)
 
     scanner_strings = memory_allocate(65536)
@@ -465,6 +477,8 @@ func scanner_init() {
     scanner_string_uint8 = scanner_strings_add(&(_uint8_[0]))
     scanner_string_int = scanner_strings_add(&(_int_[0]))
 }
+
+// SECTION: compiler
 
 var compiler_table_global *int
 var compiler_table_local *int
@@ -505,6 +519,7 @@ func compiler_table_global_add(identifier int, variable_type int, pointer_level 
 
 func compiler_compile_var_global() {
     var token [2]int = scanner_scan_token()
+
     var identifier = token[1]
     var variable_type int
     var pointer_level int
@@ -549,11 +564,13 @@ func compiler_start() {
 func compiler_init() {
     scanner_init()
 
-    compiler_table_global = (*int)(memory_allocate(65536)
-    compiler_table_local = (*int)(memory_allocate(65536)
+    compiler_table_global = (*int)(memory_allocate(65536))
+    compiler_table_local = (*int)(memory_allocate(65536))
 
     byte_code = memory_allocate(65536)
 }
+
+// SECTION: main
 
 func main() {
     compiler_init()
