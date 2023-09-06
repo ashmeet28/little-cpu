@@ -64,6 +64,8 @@ func string_parse_int(s *uint8) int {
     var is_negative uint8
     var a int
 
+    var c uint8
+
     var array_pow_10 [10]int
     var pow_10 *int = &(array_pow_10[0])
 
@@ -87,7 +89,14 @@ func string_parse_int(s *uint8) int {
 
     if (*(s + 0)) == '0' {
         if (*(s + 1)) == 'x' {
-            while (*(s + l - 1 - i)) != 'x' {
+            while (*(s + (l - 1 - i))) != 'x' {
+                c = *(s + (l - 1 - i))
+                if c > '9' {
+                    c = c - 39
+                }
+                c = c & 0xff
+                r = r | (c << (i << 2))
+                i = i + 1
             }
         } else {
             return 0
