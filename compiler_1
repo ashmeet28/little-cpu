@@ -1,5 +1,5 @@
 func main() i32 {
     var a i32 = 1_i32
-    a = 0_i32
+    a = 0_i32 - 1_i32
     return a
 }
