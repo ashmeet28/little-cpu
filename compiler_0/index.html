@@ -12,11 +12,10 @@
     <textarea rows="25" cols="25" id="AssemblyTextarea"></textarea>
     <button onclick="compile()">Compile</button>
 
-    <script src="scanner.js"></script>
     <script src="compiler.js"></script>
     <script>
         function compile() {
-            document.getElementById('AssemblyTextarea').value = Compiler.compile(Scanner.scanTokens(document.getElementById('SourceCodeTextarea').value)).join('\n');
+            document.getElementById('AssemblyTextarea').value = Compiler.compile(document.getElementById('SourceCodeTextarea').value);
         }
     </script>
 </body>
