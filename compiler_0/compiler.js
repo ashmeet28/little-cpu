@@ -19,14 +19,16 @@ Compiler.generateTokens = function (source_code) {
     }
 
     function isDigit(c) {
-        return c >= '0' && c <= '9'
+        c = c.charCodeAt(0);
+        return c >= '0'.charCodeAt(0) && c <= '9'.charCodeAt(0)
     }
 
     function isAplabet(c) {
-        return (c >= 'a' && c <= 'z') || (c >= 'A' && c <= 'Z') || (c == '_')
+        c = c.charCodeAt(0);
+        return (c >= 'a'.charCodeAt(0) && c <= 'z'.charCodeAt(0)) || (c >= 'A'.charCodeAt(0) && c <= 'Z'.charCodeAt(0)) || (c === '_'.charCodeAt(0))
     }
 
-    function IsKeyword(s) {
+    function isKeyword(s) {
         var keywords = [
             'WHILE',
             'BREAK',
@@ -53,14 +55,14 @@ Compiler.generateTokens = function (source_code) {
         }
 
         var c = advance()
-        if (c == '+') {
+        if (c === '+') {
             token.T = 'ADD';
-        } else if (c == '-') {
+        } else if (c === '-') {
             token.T = 'SUB'
-        } else if (c == '*') {
+        } else if (c === '*') {
             token.T = 'MUL'
-        } else if (c == '/') {
-            if (peek() == '/') {
+        } else if (c === '/') {
+            if (peek() === '/') {
                 advance()
                 while (peek() != '\n') {
                     advance()
@@ -69,85 +71,85 @@ Compiler.generateTokens = function (source_code) {
             } else {
                 token.T = 'QUO'
             }
-        } else if (c == '%') {
+        } else if (c === '%') {
             token.T = 'REM'
-        } else if (c == '&') {
-            if (peek() == '&') {
+        } else if (c === '&') {
+            if (peek() === '&') {
                 advance()
                 token.T = 'LAND'
             } else {
                 token.T = 'AND'
             }
-        } else if (c == '|') {
-            if (peek() == '|') {
+        } else if (c === '|') {
+            if (peek() === '|') {
                 advance()
                 token.T = 'LOR'
             } else {
                 token.T = 'OR'
             }
-        } else if (c == '^') {
+        } else if (c === '^') {
             token.T = 'XOR'
-        } else if (c == '<') {
-            if (peek() == '<') {
+        } else if (c === '<') {
+            if (peek() === '<') {
                 advance()
                 token.T = 'SHL'
-            } else if (peek() == '=') {
+            } else if (peek() === '=') {
                 advance()
                 token.T = 'LEQ'
             } else {
                 token.T = 'LSS'
             }
-        } else if (c == '>') {
-            if (peek() == '>') {
+        } else if (c === '>') {
+            if (peek() === '>') {
                 advance()
                 token.T = 'SHR'
-            } else if (peek() == '=') {
+            } else if (peek() === '=') {
                 advance()
                 token.T = 'GEQ'
             } else {
                 token.T = 'GTR'
             }
-        } else if (c == '=') {
-            if (peek() == '=') {
+        } else if (c === '=') {
+            if (peek() === '=') {
                 advance()
                 token.T = 'EQL'
             } else {
                 token.T = 'ASSIGN'
             }
-        } else if (c == '!') {
-            if (peek() == '=') {
+        } else if (c === '!') {
+            if (peek() === '=') {
                 advance()
                 token.T = 'NEQ'
             } else {
                 token.T = 'NOT'
             }
-        } else if (c == '(') {
+        } else if (c === '(') {
             token.T = 'LPAREN'
-        } else if (c == '[') {
+        } else if (c === '[') {
             token.T = 'LBRACK'
-        } else if (c == '{') {
+        } else if (c === '{') {
             token.T = 'LBRACE'
-        } else if (c == ',') {
+        } else if (c === ',') {
             token.T = 'COMMA'
-        } else if (c == '.') {
+        } else if (c === '.') {
             token.T = 'PERIOD'
-        } else if (c == ')') {
+        } else if (c === ')') {
             token.T = 'RPAREN'
-        } else if (c == ']') {
+        } else if (c === ']') {
             token.T = 'RBRACK'
-        } else if (c == '}') {
+        } else if (c === '}') {
             token.T = 'RBRACE'
-        } else if (c == ';') {
+        } else if (c === ';') {
             token.T = 'SEMICOLON'
-        } else if (c == ':') {
+        } else if (c === ':') {
             token.T = 'COLON'
-        } else if (c == ' ') {
-            while (peek() == ' ') {
+        } else if (c === ' ') {
+            while (peek() === ' ') {
                 advance()
             }
             token.T = 'SPACE'
-        } else if (c == '\n') {
-            while (peek() == '\n') {
+        } else if (c === '\n') {
+            while (peek() === '\n') {
                 advance()
             }
             token.T = 'NEW_LINE'
@@ -163,7 +165,7 @@ Compiler.generateTokens = function (source_code) {
             }
             token.T = 'IDENT';
             var s = source_code.slice(start, current)
-            if (IsKeyword(s)) {
+            if (isKeyword(s)) {
                 token.T = s.toUpperCase();
             } else {
                 token.S = s;
@@ -180,18 +182,18 @@ Compiler.generateTokens = function (source_code) {
         var token;
         while (true) {
             token = scanToken();
-            if (token.T == 'SPACE' || token.T == 'COMMENT') {
+            if (token.T === 'SPACE' || token.T === 'COMMENT') {
                 continue;
             }
             tokens.push(token);
-            if (token.T == 'EOF') {
+            if (token.T === 'EOF') {
                 break;
             }
         }
         return tokens
     }
 
-     return scanTokens();
+    return scanTokens();
 };
 
 Compiler.createAST = function (tokens) {
