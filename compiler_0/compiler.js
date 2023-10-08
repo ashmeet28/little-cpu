@@ -199,10 +199,8 @@ Compiler.generateTokens = function (source_code) {
 Compiler.generateInst = function (tokens) {
     var allInst = [];
     var instP = 0;
-    var instPOffset = 0x10000000;
 
     var globalVarP = 0;
-    var globalVarPOffset = 0x20010000;
 
     var current = 0;
 
@@ -250,11 +248,11 @@ Compiler.generateInst = function (tokens) {
     }
 
     function varInfoCreate() {
-        return { ident: '', loc: 0, scope: 0, varType: varTypeCreate(), };
+        return { ident: '', isLValue: false, loc: 0, scope: 0, varType: varTypeCreate(), };
     }
 
     function funcInfoCreate() {
-        return { ident: '', loc: 0, parm: [], retVarType: varInfoCreate(), };
+        return { ident: '', loc: 0, parm: [], retVarType: varTypeCreate(), };
     }
     function getVarType() {
         var varType = varTypeCreate();
@@ -297,9 +295,8 @@ Compiler.generateInst = function (tokens) {
             advance();
             var funcInfo = funcInfoCreate();
 
-
             funcInfo.ident = advance().S;
-            funcInfo.loc = instP + instPOffset;
+            funcInfo.loc = instP;
             advance();
 
             while (peek().T !== 'RPAREN') {
