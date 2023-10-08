@@ -202,6 +202,9 @@ Compiler.generateInst = function (tokens) {
 
     var globalVarP = 0;
 
+    var stackVar = [];
+    var stackVarP = 0;
+
     var current = 0;
 
     var funcTable = [];
@@ -214,18 +217,26 @@ Compiler.generateInst = function (tokens) {
         instP += 4;
     }
 
+    function emitInstLI(r, v) {
+        v = ('00000000' + v.toString(16)).slice(-8);
+        r = ('00' + r.toString(16)).slice(-2);
+        emitInst('lliu', r, v.slice(6, 8), v.slice(4, 6));
+        emitInst('lui', r, v.slice(2, 4), v.slice(0, 2));
+    }
+
     function emitInitInst() {
-        emitInst('lliu', '01', '00', '00'); // Return Value: 0x2000_0000
-        emitInst('lui', '01', '00', '20');
+        // Return Value: 0x2000_0000
+        emitInstLI(1, 0x2000_0000);
 
-        emitInst('lliu', '02', '00', '00'); // Global Variables: 0x2001_0000
-        emitInst('lui', '02', '01', '20');
+        // Global Variables: 0x2001_0000
+        emitInstLI(2, 0x2001_0000);
 
-        emitInst('lliu', '03', 'ff', 'ff'); // Local Variables: 0x3fff_ffff
-        emitInst('lui', '03', 'ff', '3f');
+        // Local Variables: 0x3fff_ffff
+        emitInstLI(3, 0x3fff_ffff);
 
-        emitInst('lliu', '08', '00', '00'); // Jump to main function
-        emitInst('lui', '08', '00', '00');
+        // Jump to main function
+        emitInstLI(8, 0);
+
         emitInst('jal', '00', '00', '08');
     }
 
@@ -233,6 +244,14 @@ Compiler.generateInst = function (tokens) {
         var t = tokens[current];
         current++;
         return t;
+    }
+
+    function consume(T) {
+        if (peek().T === T) {
+            advance();
+        } else {
+            console.log('Error while consuming token', peek());
+        };
     }
 
     function peek() {
@@ -260,25 +279,23 @@ Compiler.generateInst = function (tokens) {
         if (peek().T == 'MUL') {
             varType.isPointer = true;
             varType.pointerLevel = 1;
-            advance();
+            consume('MUL');
             while (peek().T === 'MUL') {
                 varType.pointerLevel++;
-                advance();
+                consume('MUL');
             }
         } else if (peek().T == 'LBRACK') {
             varType.isArray = true;
-            advance();
+            consume('LBRACK');
             if (peek().T !== 'RBRACK') {
                 varType.arraySize = parseIntLiteral(advance().S);
-                advance();
             }
+            consume('RBRACK');
         }
 
-        if (peek().T === 'IDENT' && peek().S === 'int') {
-            varType.varSize = 4;
-        }
+        varType.varSize = 4;
 
-        advance();
+        consume('IDENT');
 
         return varType;
     }
@@ -292,39 +309,45 @@ Compiler.generateInst = function (tokens) {
 
     var functionsOfCompilingTokens = {
         'FUNC': function () {
-            advance();
+            consume('FUNC');
             var funcInfo = funcInfoCreate();
 
             funcInfo.ident = advance().S;
             funcInfo.loc = instP;
-            advance();
+            consume('LPAREN');
 
             while (peek().T !== 'RPAREN') {
                 funcInfo.parm.push(getVarInfo());
                 if (peek().T === 'COMMA') {
-                    advance();
+                    consume('COMMA');
                 }
             }
 
-            advance();
+            consume('RPAREN');
 
-            if (peek().T !== 'LBRACK') {
+            if (peek().T !== 'LBRACE') {
                 funcInfo.retVarType = getVarType();
             }
 
             funcTable.push(funcInfo);
 
-            advance();
-            advance();
+            consume('LBRACE');
+            consume('NEW_LINE');
 
             currentScope++;
         },
         'VAR': function () {
-            advance();
+            consume('VAR');
             var varInfo = getVarInfo();
             varInfo.scope = currentScope;
+            varInfo.isLValue = true;
+
+            if (currentScope !== 1) {
+
+            }
+
             varTable.push(varInfo);
-            advance();
+            consume('NEW_LINE');
         },
     };
 
