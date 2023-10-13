@@ -343,7 +343,6 @@ Compiler.generateInst = function (tokens) {
             varInfo.isLValue = true;
 
             if (currentScope !== 1) {
-
             }
 
             varTable.push(varInfo);
