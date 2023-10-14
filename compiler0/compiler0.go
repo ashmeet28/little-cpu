@@ -68,24 +68,24 @@ type TokenInfo struct {
 
 func GetToken(source []byte) (TokenInfo, int) {
 	bytesConsumed := 0
-	tok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
+	currentTok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
 
 	if len(source) == 0 {
 
-		tok.TokenType = TT_EOF
-		return tok, bytesConsumed
+		currentTok.TokenType = TT_EOF
+		return currentTok, bytesConsumed
 
 	} else if source[0] == 0x0a {
 
-		tok.TokenType = TT_NEW_LINE
+		currentTok.TokenType = TT_NEW_LINE
 		bytesConsumed = 1
-		return tok, bytesConsumed
+		return currentTok, bytesConsumed
 
 	} else if source[0] == 0x20 {
 
-		tok.TokenType = TT_SPACE
+		currentTok.TokenType = TT_SPACE
 		bytesConsumed = 1
-		return tok, bytesConsumed
+		return currentTok, bytesConsumed
 
 	}
 
@@ -98,11 +98,9 @@ func GetToken(source []byte) (TokenInfo, int) {
 		}
 	}
 
-	if srcStr == "" {
+	if len(srcStr) == 0 {
 		srcStr = string(source)
 	}
-
-	tok.TokenType = TT_ILLEGAL
 
 	TokensStrings := map[int]string{
 		TT_ADD:    "+",
@@ -149,16 +147,16 @@ func GetToken(source []byte) (TokenInfo, int) {
 
 	for tokType, tokStr := range TokensStrings {
 		if len(srcStr) >= len(tokStr) && srcStr[:len(tokStr)] == tokStr {
-			if tok.TokenType == TT_ILLEGAL || len(tok.TokenString) < len(tokStr) {
-				tok.TokenType = tokType
-				tok.TokenString = tokStr
+			if currentTok.TokenType == TT_ILLEGAL || len(currentTok.TokenString) < len(tokStr) {
+				currentTok.TokenType = tokType
+				currentTok.TokenString = tokStr
 				bytesConsumed = len(tokStr)
 			}
 		}
 	}
 
-	if tok.TokenType != TT_ILLEGAL {
-		return tok, bytesConsumed
+	if currentTok.TokenType != TT_ILLEGAL {
+		return currentTok, bytesConsumed
 	}
 
 	isDigit := func(c byte) bool {
@@ -173,35 +171,35 @@ func GetToken(source []byte) (TokenInfo, int) {
 
 	if isAplabet(srcStr[i]) {
 
-		tok.TokenType = TT_IDENT
+		currentTok.TokenType = TT_IDENT
 		for (i < len(srcStr)) && (isAplabet(srcStr[i]) || isDigit(srcStr[i])) {
 			i++
 		}
-		tok.TokenString = srcStr[:i]
+		currentTok.TokenString = srcStr[:i]
 		bytesConsumed = len(srcStr[:i])
 
 	} else if isDigit(srcStr[i]) {
 
-		tok.TokenType = TT_INT
+		currentTok.TokenType = TT_INT
 		for (i < len(srcStr)) && (isAplabet(srcStr[i]) || isDigit(srcStr[i])) {
 			i++
 		}
-		tok.TokenString = srcStr[:i]
+		currentTok.TokenString = srcStr[:i]
 		bytesConsumed = len(srcStr[:i])
 
 	}
 
-	return tok, bytesConsumed
+	return currentTok, bytesConsumed
 }
 
-func GetTokens(s []byte) []TokenInfo {
+func GetTokens(source []byte) []TokenInfo {
 	allToks := []TokenInfo{}
 	tok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
 	bytesConsumed := 0
 
 	for tok.TokenType != TT_EOF {
-		tok, bytesConsumed = GetToken(s)
-		s = s[bytesConsumed:]
+		tok, bytesConsumed = GetToken(source)
+		source = source[bytesConsumed:]
 		if tok.TokenType != TT_SPACE {
 			allToks = append(allToks, tok)
 		}
