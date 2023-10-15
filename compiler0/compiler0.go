@@ -194,14 +194,14 @@ func GetToken(source []byte) (TokenInfo, int) {
 
 func GetTokens(source []byte) []TokenInfo {
 	allToks := []TokenInfo{}
-	tok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
+	currentTok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
 	bytesConsumed := 0
 
-	for tok.TokenType != TT_EOF {
-		tok, bytesConsumed = GetToken(source)
+	for currentTok.TokenType != TT_EOF {
+		currentTok, bytesConsumed = GetToken(source)
 		source = source[bytesConsumed:]
-		if tok.TokenType != TT_SPACE {
-			allToks = append(allToks, tok)
+		if currentTok.TokenType != TT_SPACE {
+			allToks = append(allToks, currentTok)
 		}
 	}
 
