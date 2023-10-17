@@ -73,6 +73,7 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 	if len(src) == 0 {
 
 		currTok.tokType = TT_EOF
+		bytesConsumed = 0
 		return currTok, bytesConsumed
 
 	} else if src[0] == 0x0a {
