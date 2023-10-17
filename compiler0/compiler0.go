@@ -258,11 +258,15 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	var finalInsts []string
 
 	emitInst := func(op string, p1 string, p2 string, p3 string) {
-		finalInsts = append(finalInsts, op+" "+p1+" "+p2+" "+p3)
+		finalInsts = append(finalInsts, (op + "    ")[:4]+" "+p1+" "+p2+" "+p3)
 	}
 
 	getNextInstAddr := func() int {
 		return len(finalInsts) * 4
+	}
+
+	emitInstNOP := func() {
+		emitInst("ADD", "00", "00", "00")
 	}
 
 	// allocVarMem := func(s int) int {
@@ -288,7 +292,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			consume(TT_LBRACE)
 			consume(TT_NEW_LINE)
 			consume(TT_RBRACE)
-			emitInst("ADD", "00", "00", "00")
+			emitInstNOP()
 		default:
 			advance()
 		}
