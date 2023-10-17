@@ -40,16 +40,16 @@ const (
 	TT_LEQ    // <=
 	TT_GEQ    // >=
 
-	TT_LPAREN // (
-	TT_LBRACK // [
-	TT_LBRACE // {
-	TT_RPAREN // )
-	TT_RBRACK // ]
-	TT_RBRACE // }
-	TT_COMMA  // ,
-	TT_PERIOD // .
-	SEMICOLON // ;
-	COLON     // :
+	TT_LPAREN    // (
+	TT_LBRACK    // [
+	TT_LBRACE    // {
+	TT_RPAREN    // )
+	TT_RBRACK    // ]
+	TT_RBRACE    // }
+	TT_COMMA     // ,
+	TT_PERIOD    // .
+	TT_SEMICOLON // ;
+	TT_COLON     // :
 
 	TT_WHILE
 	TT_BREAK
@@ -62,30 +62,30 @@ const (
 )
 
 type TokenInfo struct {
-	TokenType   int
-	TokenString string
+	tokType int
+	tokStr  string
 }
 
 func GenerateToken(src []byte) (TokenInfo, int) {
 	bytesConsumed := 0
-	currentTok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
+	currTok := TokenInfo{tokType: TT_ILLEGAL, tokStr: ""}
 
 	if len(src) == 0 {
 
-		currentTok.TokenType = TT_EOF
-		return currentTok, bytesConsumed
+		currTok.tokType = TT_EOF
+		return currTok, bytesConsumed
 
 	} else if src[0] == 0x0a {
 
-		currentTok.TokenType = TT_NEW_LINE
+		currTok.tokType = TT_NEW_LINE
 		bytesConsumed = 1
-		return currentTok, bytesConsumed
+		return currTok, bytesConsumed
 
 	} else if src[0] == 0x20 {
 
-		currentTok.TokenType = TT_SPACE
+		currTok.tokType = TT_SPACE
 		bytesConsumed = 1
-		return currentTok, bytesConsumed
+		return currTok, bytesConsumed
 
 	}
 
@@ -124,16 +124,16 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 		TT_LEQ:    "<=",
 		TT_GEQ:    ">=",
 
-		TT_LPAREN: "(",
-		TT_LBRACK: "[",
-		TT_LBRACE: "{",
-		TT_RPAREN: ")",
-		TT_RBRACK: "]",
-		TT_RBRACE: "}",
-		TT_COMMA:  ",",
-		TT_PERIOD: ".",
-		SEMICOLON: ";",
-		COLON:     ":",
+		TT_LPAREN:    "(",
+		TT_LBRACK:    "[",
+		TT_LBRACE:    "{",
+		TT_RPAREN:    ")",
+		TT_RBRACK:    "]",
+		TT_RBRACE:    "}",
+		TT_COMMA:     ",",
+		TT_PERIOD:    ".",
+		TT_SEMICOLON: ";",
+		TT_COLON:     ":",
 
 		TT_WHILE:    "while",
 		TT_BREAK:    "break",
@@ -147,16 +147,16 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 
 	for tokType, tokStr := range TokensStrings {
 		if len(srcStr) >= len(tokStr) && srcStr[:len(tokStr)] == tokStr {
-			if currentTok.TokenType == TT_ILLEGAL || len(currentTok.TokenString) < len(tokStr) {
-				currentTok.TokenType = tokType
-				currentTok.TokenString = tokStr
+			if currTok.tokType == TT_ILLEGAL || len(currTok.tokStr) < len(tokStr) {
+				currTok.tokType = tokType
+				currTok.tokStr = tokStr
 				bytesConsumed = len(tokStr)
 			}
 		}
 	}
 
-	if currentTok.TokenType != TT_ILLEGAL {
-		return currentTok, bytesConsumed
+	if currTok.tokType != TT_ILLEGAL {
+		return currTok, bytesConsumed
 	}
 
 	isDigit := func(c byte) bool {
@@ -171,37 +171,37 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 
 	if isAplabet(srcStr[i]) {
 
-		currentTok.TokenType = TT_IDENT
+		currTok.tokType = TT_IDENT
 		for (i < len(srcStr)) && (isAplabet(srcStr[i]) || isDigit(srcStr[i])) {
 			i++
 		}
-		currentTok.TokenString = srcStr[:i]
+		currTok.tokStr = srcStr[:i]
 		bytesConsumed = len(srcStr[:i])
 
 	} else if isDigit(srcStr[i]) {
 
-		currentTok.TokenType = TT_INT
+		currTok.tokType = TT_INT
 		for (i < len(srcStr)) && (isAplabet(srcStr[i]) || isDigit(srcStr[i])) {
 			i++
 		}
-		currentTok.TokenString = srcStr[:i]
+		currTok.tokStr = srcStr[:i]
 		bytesConsumed = len(srcStr[:i])
 
 	}
 
-	return currentTok, bytesConsumed
+	return currTok, bytesConsumed
 }
 
 func GenerateTokens(src []byte) []TokenInfo {
 	toks := []TokenInfo{}
-	currentTok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
+	currTok := TokenInfo{tokType: TT_ILLEGAL, tokStr: ""}
 	bytesConsumed := 0
 
-	for currentTok.TokenType != TT_EOF {
-		currentTok, bytesConsumed = GenerateToken(src)
+	for currTok.tokType != TT_EOF {
+		currTok, bytesConsumed = GenerateToken(src)
 		src = src[bytesConsumed:]
-		if currentTok.TokenType != TT_SPACE {
-			toks = append(toks, currentTok)
+		if currTok.tokType != TT_SPACE {
+			toks = append(toks, currTok)
 		}
 	}
 
@@ -210,12 +210,12 @@ func GenerateTokens(src []byte) []TokenInfo {
 
 func GenerateInstructions(toks []TokenInfo) {
 	type VarInfo struct {
-		I  string    // Identifier
-		T  int       // Type
-		AL int       // Array Length
-		FS []VarInfo // Function Signature (Last element holds info of return variable)
-		S  int       // Scope
-		A  int       // Address
+		ident   string
+		varType int
+		arrLen  int
+		funcSig []VarInfo
+		scope   int
+		addr    int
 	}
 
 	const (
