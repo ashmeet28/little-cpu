@@ -66,22 +66,22 @@ type TokenInfo struct {
 	TokenString string
 }
 
-func GetToken(source []byte) (TokenInfo, int) {
+func GenerateToken(src []byte) (TokenInfo, int) {
 	bytesConsumed := 0
 	currentTok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
 
-	if len(source) == 0 {
+	if len(src) == 0 {
 
 		currentTok.TokenType = TT_EOF
 		return currentTok, bytesConsumed
 
-	} else if source[0] == 0x0a {
+	} else if src[0] == 0x0a {
 
 		currentTok.TokenType = TT_NEW_LINE
 		bytesConsumed = 1
 		return currentTok, bytesConsumed
 
-	} else if source[0] == 0x20 {
+	} else if src[0] == 0x20 {
 
 		currentTok.TokenType = TT_SPACE
 		bytesConsumed = 1
@@ -91,15 +91,15 @@ func GetToken(source []byte) (TokenInfo, int) {
 
 	srcStr := ""
 
-	for i, c := range source {
+	for i, c := range src {
 		if c == 0x0a {
-			srcStr = string(source[:i])
+			srcStr = string(src[:i])
 			break
 		}
 	}
 
 	if len(srcStr) == 0 {
-		srcStr = string(source)
+		srcStr = string(src)
 	}
 
 	TokensStrings := map[int]string{
@@ -192,20 +192,23 @@ func GetToken(source []byte) (TokenInfo, int) {
 	return currentTok, bytesConsumed
 }
 
-func GetTokens(source []byte) []TokenInfo {
-	allToks := []TokenInfo{}
+func GenerateTokens(src []byte) []TokenInfo {
+	toks := []TokenInfo{}
 	currentTok := TokenInfo{TokenType: TT_ILLEGAL, TokenString: ""}
 	bytesConsumed := 0
 
 	for currentTok.TokenType != TT_EOF {
-		currentTok, bytesConsumed = GetToken(source)
-		source = source[bytesConsumed:]
+		currentTok, bytesConsumed = GenerateToken(src)
+		src = src[bytesConsumed:]
 		if currentTok.TokenType != TT_SPACE {
-			allToks = append(allToks, currentTok)
+			toks = append(toks, currentTok)
 		}
 	}
 
-	return allToks
+	return toks
+}
+
+func GenerateInstructions(toks []TokenInfo) {
 }
 
 func main() {
@@ -214,7 +217,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for _, tok := range GetTokens(data) {
+	for _, tok := range GenerateTokens(data) {
 		fmt.Println(tok)
 	}
 }
