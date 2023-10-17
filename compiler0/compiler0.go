@@ -209,6 +209,25 @@ func GenerateTokens(src []byte) []TokenInfo {
 }
 
 func GenerateInstructions(toks []TokenInfo) {
+	type VarInfo struct {
+		I  string    // Identifier
+		T  int       // Type
+		AL int       // Array Length
+		FS []VarInfo // Function Signature (Last element holds info of return variable)
+		S  int       // Scope
+		A  int       // Address
+	}
+
+	const (
+		VT_ILLEGAL int = iota
+		VT_VOID
+		VT_FUNC
+		VT_INT
+		VT_ARRAY
+	)
+
+	symbolTable := []VarInfo{}
+
 }
 
 func main() {
