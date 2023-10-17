@@ -67,7 +67,7 @@ type TokenInfo struct {
 }
 
 func GenerateToken(src []byte) (TokenInfo, int) {
-	bytesConsumed := 0
+	var bytesConsumed int
 	currTok := TokenInfo{tokType: TT_ILLEGAL, tokStr: ""}
 
 	if len(src) == 0 {
@@ -89,7 +89,7 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 
 	}
 
-	srcStr := ""
+	var srcStr string
 
 	for i, c := range src {
 		if c == 0x0a {
@@ -199,6 +199,10 @@ func GenerateTokens(src []byte) []TokenInfo {
 
 	for currTok.tokType != TT_EOF {
 		currTok, bytesConsumed = GenerateToken(src)
+		if currTok.tokType == TT_ILLEGAL {
+			fmt.Println("Error while tokenizing")
+			os.Exit(1)
+		}
 		src = src[bytesConsumed:]
 		if currTok.tokType != TT_SPACE {
 			toks = append(toks, currTok)
@@ -208,7 +212,7 @@ func GenerateTokens(src []byte) []TokenInfo {
 	return toks
 }
 
-func GenerateInstructions(toks []TokenInfo) {
+func GenerateInstructions(toks []TokenInfo) []string {
 	type VarInfo struct {
 		ident   string
 		varType int
@@ -228,6 +232,70 @@ func GenerateInstructions(toks []TokenInfo) {
 
 	symbolTable := []VarInfo{}
 
+	peek := func() TokenInfo {
+		return toks[0]
+	}
+
+	advance := func() TokenInfo {
+		tok := toks[0]
+		toks = toks[1:]
+		return tok
+	}
+
+	consume := func(tokType int) TokenInfo {
+		tok := toks[0]
+		if tok.tokType != tokType {
+			fmt.Println("Error while consuming token")
+			os.Exit(1)
+		}
+		toks = toks[1:]
+		return tok
+	}
+
+	currScope := 1
+	// freeVarMemAddr := 0
+
+	var finalInsts []string
+
+	emitInst := func(op string, p1 string, p2 string, p3 string) {
+		finalInsts = append(finalInsts, op+" "+p1+" "+p2+" "+p3)
+	}
+
+	getNextInstAddr := func() int {
+		return len(finalInsts) * 4
+	}
+
+	// allocVarMem := func(s int) int {
+	// 	addr := freeVarMemAddr
+	// 	freeVarMemAddr = freeVarMemAddr + s
+	// 	return addr
+	// }
+
+	for peek().tokType != TT_EOF {
+		switch peek().tokType {
+		case TT_FUNC:
+			consume(TT_FUNC)
+
+			currVarInfo := VarInfo{}
+			currVarInfo.varType = TT_FUNC
+			currVarInfo.ident = consume(TT_IDENT).tokStr
+			currVarInfo.scope = currScope
+			currVarInfo.addr = getNextInstAddr()
+			symbolTable = append(symbolTable, currVarInfo)
+
+			consume(TT_LPAREN)
+			consume(TT_RPAREN)
+			consume(TT_LBRACE)
+			consume(TT_NEW_LINE)
+			consume(TT_RBRACE)
+			emitInst("ADD", "00", "00", "00")
+		default:
+			advance()
+		}
+	}
+	fmt.Println(symbolTable)
+	fmt.Println(finalInsts)
+	return finalInsts
 }
 
 func main() {
@@ -236,7 +304,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	for _, tok := range GenerateTokens(data) {
-		fmt.Println(tok)
-	}
+	toks := GenerateTokens(data)
+
+	GenerateInstructions(toks)
 }
