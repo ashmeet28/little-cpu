@@ -5,7 +5,6 @@ Memory map:
 
 0x1000_0000 Instructions
 
-0x2000_0000 Return Value
-0x2001_0000 Global Variables
+0x2000_0000 Global Variables
 
 0x3fff_ffff Local Variables

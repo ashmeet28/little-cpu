@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"os"
+	"strconv"
 )
 
 const (
@@ -256,18 +257,45 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	currScope := 1
 	// freeVarMemAddr := 0
 
-	var finalInsts []string
+	var instructions []string
 
 	emitInst := func(op string, p1 string, p2 string, p3 string) {
-		finalInsts = append(finalInsts, (op + "    ")[:4]+" "+p1+" "+p2+" "+p3)
+		op = (op + "    ")[:4]
+		p1 = "00" + p1
+		p1 = p1[len(p1)-2:]
+		p2 = "00" + p2
+		p2 = p2[len(p2)-2:]
+		p3 = "00" + p3
+		p3 = p3[len(p3)-2:]
+		instructions = append(instructions, op+" "+p1+" "+p2+" "+p3)
 	}
 
 	getNextInstAddr := func() int {
-		return len(finalInsts) * 4
+		return len(instructions) * 4
 	}
 
 	emitInstNOP := func() {
 		emitInst("ADD", "00", "00", "00")
+	}
+
+	emitInstLoadImm := func(reg int, v int) {
+		emitInst("LLIU", strconv.FormatInt(int64(reg), 16), strconv.FormatInt(int64(v&0xff), 16), strconv.FormatInt(int64((v>>8)&0xff), 16))
+		emitInst("LUI", strconv.FormatInt(int64(reg), 16), strconv.FormatInt(int64((v>>16)&0xff), 16), strconv.FormatInt(int64((v>>24)&0xff), 16))
+	}
+
+	emitInstInit := func() {
+		// Global Variables Base Address
+		emitInstLoadImm(1, 0x2000_0000)
+
+		// Frame Pointer
+		emitInstLoadImm(2, 0x3fff_ffff)
+
+		// Stack Pointer
+		emitInstLoadImm(3, 0x3fff_ffff)
+
+		// Jump to main function
+		emitInstLoadImm(8, 0)
+		emitInstNOP()
 	}
 
 	// allocVarMem := func(s int) int {
@@ -275,6 +303,8 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	// 	freeVarMemAddr = freeVarMemAddr + s
 	// 	return addr
 	// }
+
+	emitInstInit()
 
 	for peek().tokType != TT_EOF {
 		switch peek().tokType {
@@ -298,9 +328,12 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			advance()
 		}
 	}
-	fmt.Println(symbolTable)
-	fmt.Println(finalInsts)
-	return finalInsts
+
+	for _, v := range instructions {
+		fmt.Println(v)
+	}
+
+	return instructions
 }
 
 func main() {
