@@ -69,26 +69,22 @@ type TokenInfo struct {
 
 func GenerateToken(src []byte) (TokenInfo, int) {
 	var bytesConsumed int
-	currTok := TokenInfo{tokType: TT_ILLEGAL, tokStr: ""}
+
+	var currTok TokenInfo
+	currTok.tokType = TT_ILLEGAL
 
 	if len(src) == 0 {
-
 		currTok.tokType = TT_EOF
 		bytesConsumed = 0
 		return currTok, bytesConsumed
-
 	} else if src[0] == 0x0a {
-
 		currTok.tokType = TT_NEW_LINE
 		bytesConsumed = 1
 		return currTok, bytesConsumed
-
 	} else if src[0] == 0x20 {
-
 		currTok.tokType = TT_SPACE
 		bytesConsumed = 1
 		return currTok, bytesConsumed
-
 	}
 
 	var srcStr string
@@ -169,7 +165,7 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 		return (c >= 0x41 && c <= 0x5a) || (c >= 0x61 && c <= 0x7a) || (c == 0x5f)
 	}
 
-	i := 0
+	var i int = 0
 
 	if isAplabet(srcStr[i]) {
 
@@ -195,9 +191,10 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 }
 
 func GenerateTokens(src []byte) []TokenInfo {
-	toks := []TokenInfo{}
-	currTok := TokenInfo{tokType: TT_ILLEGAL, tokStr: ""}
-	bytesConsumed := 0
+	var toks []TokenInfo
+	var currTok TokenInfo
+	currTok.tokType = TT_ILLEGAL
+	var bytesConsumed int = 0
 
 	for currTok.tokType != TT_EOF {
 		currTok, bytesConsumed = GenerateToken(src)
@@ -224,6 +221,10 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		addr    int
 	}
 
+	type BlockInfo struct {
+		blockType int
+	}
+
 	const (
 		VT_ILLEGAL int = iota
 		VT_VOID
@@ -232,7 +233,13 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		VT_ARRAY
 	)
 
-	symbolTable := []VarInfo{}
+	const (
+		BT_ILLEGAL int = iota
+		BT_FUNC
+	)
+
+	var symbolTable []VarInfo
+	var blockTable []BlockInfo
 
 	peek := func() TokenInfo {
 		return toks[0]
@@ -254,12 +261,26 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		return tok
 	}
 
-	currScope := 1
-	// freeVarMemAddr := 0
+	var GLOBAL_SCOPE int = 1
+	var currScope int = GLOBAL_SCOPE
 
 	var instructions []string
 
-	emitInst := func(op string, p1 string, p2 string, p3 string) {
+	// var REG_ZERO int = 0
+	var REG_INST_BASE_ADDR int = 1
+	var REG_GLOBAL_VAR_BASE_ADDR int = 2
+	var REG_FRAME_PTR_ int = 3
+	var REG_STACK_PTR int = 4
+	var REG_A int = 8
+
+	var REG_ZERO_HEX string = "00"
+	var REG_INST_BASE_ADDR_HEX string = "01"
+	// var REG_GLOBAL_VAR_BASE_ADDR_HEX string = "02"
+	var REG_FRAME_PTR_HEX string = "03"
+	var REG_STACK_PTR_HEX string = "04"
+	var REG_A_HEX string = "08"
+
+	formatInst := func(op string, p1 string, p2 string, p3 string) string {
 		op = (op + "    ")[:4]
 		p1 = "00" + p1
 		p1 = p1[len(p1)-2:]
@@ -267,15 +288,23 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		p2 = p2[len(p2)-2:]
 		p3 = "00" + p3
 		p3 = p3[len(p3)-2:]
-		instructions = append(instructions, op+" "+p1+" "+p2+" "+p3)
+		return (op + " " + p1 + " " + p2 + " " + p3)
+	}
+	emitInst := func(op string, p1 string, p2 string, p3 string) {
+		instructions = append(instructions, formatInst(op, p1, p2, p3))
 	}
 
-	getNextInstAddr := func() int {
-		return len(instructions) * 4
+	setInst := func(op string, p1 string, p2 string, p3 string, i int) {
+		instructions[i] = formatInst(op, p1, p2, p3)
 	}
 
 	emitInstNOP := func() {
-		emitInst("ADD", "00", "00", "00")
+		emitInst("ADD", REG_ZERO_HEX, REG_ZERO_HEX, REG_ZERO_HEX)
+	}
+
+	setInstLoadImm := func(reg int, v int, i int) {
+		setInst("LLIU", strconv.FormatInt(int64(reg), 16), strconv.FormatInt(int64(v&0xff), 16), strconv.FormatInt(int64((v>>8)&0xff), 16), i)
+		setInst("LUI", strconv.FormatInt(int64(reg), 16), strconv.FormatInt(int64((v>>16)&0xff), 16), strconv.FormatInt(int64((v>>24)&0xff), 16), i+1)
 	}
 
 	emitInstLoadImm := func(reg int, v int) {
@@ -283,37 +312,88 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		emitInst("LUI", strconv.FormatInt(int64(reg), 16), strconv.FormatInt(int64((v>>16)&0xff), 16), strconv.FormatInt(int64((v>>24)&0xff), 16))
 	}
 
+	emitInstPushWord := func() {
+		emitInst("SW", REG_A_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
+		emitInstLoadImm(REG_A, 4)
+		emitInst("SUB", REG_STACK_PTR_HEX, REG_STACK_PTR_HEX, REG_A_HEX)
+	}
+
 	emitInstInit := func() {
-		// Global Variables Base Address
-		emitInstLoadImm(1, 0x2000_0000)
+		emitInstLoadImm(REG_INST_BASE_ADDR, 0x1000_0000)
 
-		// Frame Pointer
-		emitInstLoadImm(2, 0x3fff_ffff)
+		emitInstLoadImm(REG_GLOBAL_VAR_BASE_ADDR, 0x2000_0000)
 
-		// Stack Pointer
-		emitInstLoadImm(3, 0x3fff_ffff)
+		emitInstLoadImm(REG_FRAME_PTR_, 0x3fff_ffff)
+
+		emitInstLoadImm(REG_STACK_PTR, 0x3fff_ffff)
 
 		// Jump to main function
-		emitInstLoadImm(8, 0)
+		emitInstNOP()
+		emitInstNOP()
 		emitInstNOP()
 	}
 
-	// allocVarMem := func(s int) int {
-	// 	addr := freeVarMemAddr
-	// 	freeVarMemAddr = freeVarMemAddr + s
-	// 	return addr
-	// }
-
 	emitInstInit()
+
+	findVar := func(ident string) VarInfo {
+		for _, v := range symbolTable {
+			if v.ident == ident {
+				return v
+			}
+		}
+
+		var varInfo VarInfo
+		varInfo.varType = VT_ILLEGAL
+		return varInfo
+	}
+
+	linkMainFunc := func() {
+		var varInfo VarInfo = findVar("main")
+		var JUMP_TO_MAIN_FUNC_INST_INDEX int = 8
+		setInstLoadImm(REG_A, varInfo.addr, JUMP_TO_MAIN_FUNC_INST_INDEX)
+		setInst("JALR", REG_A_HEX, REG_INST_BASE_ADDR_HEX, REG_A_HEX, JUMP_TO_MAIN_FUNC_INST_INDEX+2)
+	}
+
+	getNextInstAddr := func() int {
+		return len(instructions) * 4
+	}
+
+	getNextLocalVarAddr := func() int {
+		var addr int
+		for _, varInfo := range symbolTable {
+			if varInfo.scope != GLOBAL_SCOPE {
+				if varInfo.varType == VT_INT {
+					addr += 4
+				} else if varInfo.varType == VT_ARRAY {
+					addr += (varInfo.arrLen * 4)
+				}
+			}
+		}
+		return addr
+	}
+
+	getNextGlobalVarAddr := func() int {
+		var addr int
+		for _, varInfo := range symbolTable {
+			if varInfo.scope == GLOBAL_SCOPE {
+				if varInfo.varType == VT_INT {
+					addr += 4
+				} else if varInfo.varType == VT_ARRAY {
+					addr += (varInfo.arrLen * 4)
+				}
+			}
+		}
+		return addr
+	}
 
 	for peek().tokType != TT_EOF {
 		switch peek().tokType {
 		case TT_FUNC:
 			consume(TT_FUNC)
 
-			currVarInfo := VarInfo{}
-			currVarInfo.varType = TT_FUNC
+			var currVarInfo VarInfo
 			currVarInfo.ident = consume(TT_IDENT).tokStr
+			currVarInfo.varType = TT_FUNC
 			currVarInfo.scope = currScope
 			currVarInfo.addr = getNextInstAddr()
 			symbolTable = append(symbolTable, currVarInfo)
@@ -322,14 +402,47 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			consume(TT_RPAREN)
 			consume(TT_LBRACE)
 			consume(TT_NEW_LINE)
+
+			emitInstPushWord()
+			emitInst("ADD", REG_FRAME_PTR_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
+
+			var currBlockInfo BlockInfo
+			currBlockInfo.blockType = BT_FUNC
+			blockTable = append(blockTable, currBlockInfo)
+
+			currScope++
+		case TT_VAR:
+			consume(TT_VAR)
+
+			var currVarInfo VarInfo
+			currVarInfo.ident = consume(TT_IDENT).tokStr
+			currVarInfo.varType = VT_INT
+			currVarInfo.scope = currScope
+			if currScope == GLOBAL_SCOPE {
+				currVarInfo.addr = getNextGlobalVarAddr()
+			} else {
+				emitInstLoadImm(8, 0)
+				emitInstPushWord()
+				currVarInfo.addr = getNextLocalVarAddr()
+			}
+			symbolTable = append(symbolTable, currVarInfo)
+		case TT_RBRACE:
+			var currBlockInfo BlockInfo = blockTable[len(blockTable)-1]
+			if currBlockInfo.blockType == BT_FUNC {
+
+			}
 			consume(TT_RBRACE)
-			emitInstNOP()
 		default:
 			advance()
 		}
 	}
 
+	linkMainFunc()
+
 	for _, v := range instructions {
+		fmt.Println(v)
+	}
+	for _, v := range symbolTable {
 		fmt.Println(v)
 	}
 
