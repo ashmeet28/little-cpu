@@ -272,13 +272,15 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	var REG_FRAME_PTR_ int = 3
 	var REG_STACK_PTR int = 4
 	var REG_A int = 8
+	// var REG_B int = 9
 
-	var REG_ZERO_HEX string = "00"
-	var REG_INST_BASE_ADDR_HEX string = "01"
-	// var REG_GLOBAL_VAR_BASE_ADDR_HEX string = "02"
-	var REG_FRAME_PTR_HEX string = "03"
-	var REG_STACK_PTR_HEX string = "04"
-	var REG_A_HEX string = "08"
+	var REG_ZERO_X string = "00"
+	var REG_INST_BASE_ADDR_X string = "01"
+	var REG_GLOBAL_VAR_BASE_ADDR_X string = "02"
+	var REG_FRAME_PTR_X string = "03"
+	var REG_STACK_PTR_X string = "04"
+	var REG_A_X string = "08"
+	var REG_B_X string = "09"
 
 	formatInst := func(op string, p1 string, p2 string, p3 string) string {
 		op = (op + "    ")[:4]
@@ -290,6 +292,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		p3 = p3[len(p3)-2:]
 		return (op + " " + p1 + " " + p2 + " " + p3)
 	}
+
 	emitInst := func(op string, p1 string, p2 string, p3 string) {
 		instructions = append(instructions, formatInst(op, p1, p2, p3))
 	}
@@ -299,7 +302,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	}
 
 	emitInstNOP := func() {
-		emitInst("ADD", REG_ZERO_HEX, REG_ZERO_HEX, REG_ZERO_HEX)
+		emitInst("ADD", REG_ZERO_X, REG_ZERO_X, REG_ZERO_X)
 	}
 
 	setInstLoadImm := func(reg int, v int, i int) {
@@ -312,16 +315,30 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		emitInst("LUI", strconv.FormatInt(int64(reg), 16), strconv.FormatInt(int64((v>>16)&0xff), 16), strconv.FormatInt(int64((v>>24)&0xff), 16))
 	}
 
-	emitInstPushWord := func() {
-		emitInst("SW", REG_A_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
+	emitInstStackPushWord := func() {
+		emitInst("SW", REG_A_X, REG_ZERO_X, REG_STACK_PTR_X)
 		emitInstLoadImm(REG_A, 4)
-		emitInst("SUB", REG_STACK_PTR_HEX, REG_STACK_PTR_HEX, REG_A_HEX)
+		emitInst("SUB", REG_STACK_PTR_X, REG_STACK_PTR_X, REG_A_X)
 	}
 
-	emitInstPopWord := func() {
+	emitInstStackPopWord := func() {
 		emitInstLoadImm(REG_A, 4)
-		emitInst("ADD", REG_STACK_PTR_HEX, REG_STACK_PTR_HEX, REG_A_HEX)
-		emitInst("LW", REG_A_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
+		emitInst("ADD", REG_STACK_PTR_X, REG_STACK_PTR_X, REG_A_X)
+		emitInst("LW", REG_A_X, REG_ZERO_X, REG_STACK_PTR_X)
+	}
+
+	emitInstStackStoreLocalWord := func() {
+		emitInstStackPopWord()
+		emitInst("ADD", REG_B_X, REG_ZERO_X, REG_A_X)
+		emitInstStackPopWord()
+		emitInst("SW", REG_B_X, REG_FRAME_PTR_X, REG_A_X)
+	}
+
+	emitInstStackStoreGlobalWord := func() {
+		emitInstStackPopWord()
+		emitInst("ADD", REG_B_X, REG_ZERO_X, REG_A_X)
+		emitInstStackPopWord()
+		emitInst("SW", REG_B_X, REG_GLOBAL_VAR_BASE_ADDR_X, REG_A_X)
 	}
 
 	emitInstInit := func() {
@@ -337,6 +354,8 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		emitInstNOP()
 		emitInstNOP()
 		emitInstNOP()
+
+		emitInst("ECALL", "00", "00", "00")
 	}
 
 	emitInstInit()
@@ -357,7 +376,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		var varInfo VarInfo = findVar("main")
 		var JUMP_TO_MAIN_FUNC_INST_INDEX int = 8
 		setInstLoadImm(REG_A, varInfo.addr, JUMP_TO_MAIN_FUNC_INST_INDEX)
-		setInst("JALR", REG_A_HEX, REG_INST_BASE_ADDR_HEX, REG_A_HEX, JUMP_TO_MAIN_FUNC_INST_INDEX+2)
+		setInst("JALR", REG_A_X, REG_INST_BASE_ADDR_X, REG_A_X, JUMP_TO_MAIN_FUNC_INST_INDEX+2)
 	}
 
 	getNextInstAddr := func() int {
@@ -414,8 +433,8 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			consume(TT_RPAREN)
 			consume(TT_LBRACE)
 
-			emitInstPushWord()
-			emitInst("ADD", REG_FRAME_PTR_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
+			emitInstStackPushWord()
+			emitInst("ADD", REG_FRAME_PTR_X, REG_ZERO_X, REG_STACK_PTR_X)
 
 			var currBlockInfo BlockInfo
 			currBlockInfo.blockType = BT_FUNC
@@ -435,8 +454,8 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			if currScope == GLOBAL_SCOPE {
 				currVarInfo.addr = getNextGlobalVarAddr()
 			} else {
-				emitInstLoadImm(8, 0)
-				emitInstPushWord()
+				emitInstLoadImm(REG_A, 0)
+				emitInstStackPushWord()
 				currVarInfo.addr = getNextLocalVarAddr()
 			}
 			varTable = append(varTable, currVarInfo)
@@ -444,14 +463,27 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			var currBlockInfo BlockInfo = blockTable[len(blockTable)-1]
 			blockTable = blockTable[:len(blockTable)-1]
 			if currBlockInfo.blockType == BT_FUNC {
-				emitInst("ADD", REG_STACK_PTR_HEX, REG_ZERO_HEX, REG_FRAME_PTR_HEX)
-				emitInstPopWord()
-				emitInst("ADD", REG_FRAME_PTR_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
-				emitInst("JALR", REG_ZERO_HEX, REG_INST_BASE_ADDR_HEX, REG_A_HEX)
+				emitInst("ADD", REG_STACK_PTR_X, REG_ZERO_X, REG_FRAME_PTR_X)
+				emitInstStackPopWord()
+				emitInst("ADD", REG_FRAME_PTR_X, REG_ZERO_X, REG_STACK_PTR_X)
+				emitInst("JALR", REG_ZERO_X, REG_INST_BASE_ADDR_X, REG_A_X)
 				currScope = GLOBAL_SCOPE
 				clearLocalVarFromVarTable(currScope)
 			}
 			consume(TT_RBRACE)
+		case TT_IDENT:
+			var varInfo = findVar(consume(TT_IDENT).tokStr)
+			emitInstLoadImm(REG_A, varInfo.addr)
+			emitInstStackPushWord()
+			consume(TT_ASSIGN)
+			v, _ := strconv.ParseInt(consume(TT_INT).tokStr, 0, 64)
+			emitInstLoadImm(REG_A, int(v))
+			emitInstStackPushWord()
+			if varInfo.scope == GLOBAL_SCOPE {
+				emitInstStackStoreGlobalWord()
+			} else {
+				emitInstStackStoreLocalWord()
+			}
 		default:
 			advance()
 		}
