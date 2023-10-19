@@ -238,7 +238,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		BT_FUNC
 	)
 
-	var symbolTable []VarInfo
+	var varTable []VarInfo
 	var blockTable []BlockInfo
 
 	peek := func() TokenInfo {
@@ -318,6 +318,12 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		emitInst("SUB", REG_STACK_PTR_HEX, REG_STACK_PTR_HEX, REG_A_HEX)
 	}
 
+	emitInstPopWord := func() {
+		emitInstLoadImm(REG_A, 4)
+		emitInst("ADD", REG_STACK_PTR_HEX, REG_STACK_PTR_HEX, REG_A_HEX)
+		emitInst("LW", REG_A_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
+	}
+
 	emitInstInit := func() {
 		emitInstLoadImm(REG_INST_BASE_ADDR, 0x1000_0000)
 
@@ -336,7 +342,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	emitInstInit()
 
 	findVar := func(ident string) VarInfo {
-		for _, v := range symbolTable {
+		for _, v := range varTable {
 			if v.ident == ident {
 				return v
 			}
@@ -360,7 +366,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 
 	getNextLocalVarAddr := func() int {
 		var addr int
-		for _, varInfo := range symbolTable {
+		for _, varInfo := range varTable {
 			if varInfo.scope != GLOBAL_SCOPE {
 				if varInfo.varType == VT_INT {
 					addr += 4
@@ -374,7 +380,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 
 	getNextGlobalVarAddr := func() int {
 		var addr int
-		for _, varInfo := range symbolTable {
+		for _, varInfo := range varTable {
 			if varInfo.scope == GLOBAL_SCOPE {
 				if varInfo.varType == VT_INT {
 					addr += 4
@@ -384,6 +390,12 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			}
 		}
 		return addr
+	}
+
+	clearLocalVarFromVarTable := func(scope int) {
+		for len(varTable) != 0 && varTable[len(varTable)-1].scope > scope {
+			varTable = varTable[:len(varTable)-1]
+		}
 	}
 
 	for peek().tokType != TT_EOF {
@@ -396,12 +408,11 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			currVarInfo.varType = TT_FUNC
 			currVarInfo.scope = currScope
 			currVarInfo.addr = getNextInstAddr()
-			symbolTable = append(symbolTable, currVarInfo)
+			varTable = append(varTable, currVarInfo)
 
 			consume(TT_LPAREN)
 			consume(TT_RPAREN)
 			consume(TT_LBRACE)
-			consume(TT_NEW_LINE)
 
 			emitInstPushWord()
 			emitInst("ADD", REG_FRAME_PTR_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
@@ -416,7 +427,10 @@ func GenerateInstructions(toks []TokenInfo) []string {
 
 			var currVarInfo VarInfo
 			currVarInfo.ident = consume(TT_IDENT).tokStr
-			currVarInfo.varType = VT_INT
+			if peek().tokStr == "int" {
+				consume(TT_IDENT)
+				currVarInfo.varType = VT_INT
+			}
 			currVarInfo.scope = currScope
 			if currScope == GLOBAL_SCOPE {
 				currVarInfo.addr = getNextGlobalVarAddr()
@@ -425,11 +439,17 @@ func GenerateInstructions(toks []TokenInfo) []string {
 				emitInstPushWord()
 				currVarInfo.addr = getNextLocalVarAddr()
 			}
-			symbolTable = append(symbolTable, currVarInfo)
+			varTable = append(varTable, currVarInfo)
 		case TT_RBRACE:
 			var currBlockInfo BlockInfo = blockTable[len(blockTable)-1]
+			blockTable = blockTable[:len(blockTable)-1]
 			if currBlockInfo.blockType == BT_FUNC {
-
+				emitInst("ADD", REG_STACK_PTR_HEX, REG_ZERO_HEX, REG_FRAME_PTR_HEX)
+				emitInstPopWord()
+				emitInst("ADD", REG_FRAME_PTR_HEX, REG_ZERO_HEX, REG_STACK_PTR_HEX)
+				emitInst("JALR", REG_ZERO_HEX, REG_INST_BASE_ADDR_HEX, REG_A_HEX)
+				currScope = GLOBAL_SCOPE
+				clearLocalVarFromVarTable(currScope)
 			}
 			consume(TT_RBRACE)
 		default:
@@ -439,10 +459,10 @@ func GenerateInstructions(toks []TokenInfo) []string {
 
 	linkMainFunc()
 
-	for _, v := range instructions {
-		fmt.Println(v)
+	for i, v := range instructions {
+		fmt.Println(i, v)
 	}
-	for _, v := range symbolTable {
+	for _, v := range varTable {
 		fmt.Println(v)
 	}
 
