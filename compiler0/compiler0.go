@@ -554,7 +554,8 @@ func GenerateBytecode(instructions []string) string {
 			s = s + "0x" + inst + ", "
 		}
 	}
-	s = s[:len(s)-2]
+	s = "{ " + s[:len(s)-2] + " }"
+	s = string(append([]byte(s), 0x0a))
 
 	return s
 }
