@@ -248,14 +248,18 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	var initInstsLen int = 256
 	var allInsts []string = make([]string, initInstsLen)
 
-	var REG_ZERO string = "00"
-	var REG_INST string = "01"
-	var REG_GLOBAL string = "02"
-	var REG_FRAME string = "03"
-	var REG_STACK string = "04"
-	var REG_A string = "08"
-	var REG_B string = "09"
-	var REG_C string = "10"
+	var (
+		REG_ZERO string = "00"
+
+		REG_INST   string = "01"
+		REG_GLOBAL string = "02"
+		REG_FRAME  string = "03"
+		REG_STACK  string = "04"
+
+		REG_A string = "08"
+		REG_B string = "09"
+		REG_C string = "0a"
+	)
 
 	findVar := func(ident string) VarInfo {
 		for _, v := range varTable {
