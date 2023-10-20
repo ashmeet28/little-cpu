@@ -5,6 +5,7 @@ import (
 	"log"
 	"os"
 	"strconv"
+	"strings"
 )
 
 const (
@@ -475,10 +476,13 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			var varInfo = findVar(consume(TT_IDENT).tokStr)
 			emitInstLoadImm(REG_A, varInfo.addr)
 			emitInstStackPushWord()
+
 			consume(TT_ASSIGN)
+
 			v, _ := strconv.ParseInt(consume(TT_INT).tokStr, 0, 64)
 			emitInstLoadImm(REG_A, int(v))
 			emitInstStackPushWord()
+
 			if varInfo.scope == GLOBAL_SCOPE {
 				emitInstStackStoreGlobalWord()
 			} else {
@@ -501,6 +505,60 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	return instructions
 }
 
+func GenerateBytecode(instructions []string) string {
+	InstHex := map[string]string{
+		"ECALL": "38",
+
+		"ADD": "08",
+		"SUB": "09",
+		"XOR": "0c",
+		"OR":  "0e",
+		"AND": "0f",
+		"SRA": "0a",
+		"SRL": "0b",
+		"SLL": "0d",
+
+		"LB":  "10",
+		"LH":  "11",
+		"LW":  "12",
+		"LBU": "14",
+		"LHU": "15",
+
+		"SB": "18",
+		"SH": "19",
+		"SW": "1a",
+
+		"LUI":  "21",
+		"LLI":  "22",
+		"LLIU": "26",
+
+		"BEQ":  "28",
+		"BNE":  "29",
+		"BLT":  "2c",
+		"BGE":  "2d",
+		"BLTU": "2e",
+		"BGEU": "2f",
+
+		"JAL":  "30",
+		"JALR": "31",
+	}
+
+	var s string = strings.Join(instructions, " ")
+	for opStr, hexStr := range InstHex {
+		s = strings.ReplaceAll(s, opStr+" ", hexStr+" ")
+	}
+	instructions = strings.Split(s, " ")
+	s = ""
+	for _, inst := range instructions {
+		if inst != "" {
+			s = s + "0x" + inst + ", "
+		}
+	}
+	s = s[:len(s)-2]
+
+	return s
+}
+
 func main() {
 	data, err := os.ReadFile(os.Args[1])
 	if err != nil {
@@ -509,5 +567,6 @@ func main() {
 
 	toks := GenerateTokens(data)
 
-	GenerateInstructions(toks)
+	insts := GenerateInstructions(toks)
+	fmt.Println(GenerateBytecode(insts))
 }
