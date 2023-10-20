@@ -245,7 +245,8 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	var GLOBAL_SCOPE int = 1
 	var currScope int = GLOBAL_SCOPE
 
-	var instructions []string
+	var initInstsLen int = 256
+	var allInsts []string = make([]string, initInstsLen)
 
 	var REG_ZERO string = "00"
 	var REG_INST string = "01"
@@ -289,7 +290,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	}
 
 	getNextInstAddr := func() int {
-		return len(instructions) << 2
+		return len(allInsts) << 2
 	}
 
 	getNextLocalVarAddr := func() int {
@@ -338,15 +339,11 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	}
 
 	emitInst := func(op string, p1 string, p2 string, p3 string) {
-		instructions = append(instructions, formatInst(op, p1, p2, p3))
-	}
-
-	setInst := func(op string, p1 string, p2 string, p3 string, i int) {
-		instructions[i] = formatInst(op, p1, p2, p3)
+		allInsts = append(allInsts, formatInst(op, p1, p2, p3))
 	}
 
 	emitInstNOP := func() {
-		emitInst("ADD", REG_ZERO, REG_ZERO, REG_ZERO)
+		emitInst("ADD", "00", "00", "00")
 	}
 
 	emitInstLoadImm := func(v string) {
@@ -355,14 +352,6 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		emitInst("LLIU", REG_A, v[6:8], v[4:6])
 		emitInst("LUI", REG_B, v[2:4], v[0:2])
 		emitInst("ADD", REG_A, REG_A, REG_B)
-	}
-
-	setInstLoadImm := func(v string, i int) {
-		v = "00000000" + v
-		v = v[len(v)-8:]
-		setInst("LLIU", REG_A, v[6:8], v[4:6], i)
-		setInst("LUI", REG_B, v[2:4], v[0:2], i+1)
-		setInst("ADD", REG_A, REG_A, REG_B, i+2)
 	}
 
 	emitInstStackPushWord := func() {
@@ -390,37 +379,6 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		emitInstStackPopWord()
 		emitInst("SW", REG_C, REG_GLOBAL, REG_A)
 	}
-
-	emitInstInit := func() {
-		emitInstLoadImm(strconv.FormatInt(0x1000_0000, 16))
-		emitInst("ADD", REG_INST, REG_ZERO, REG_A)
-
-		emitInstLoadImm(strconv.FormatInt(0x2000_0000, 16))
-		emitInst("ADD", REG_GLOBAL, REG_ZERO, REG_A)
-
-		emitInstLoadImm(strconv.FormatInt(0x3000_0000, 16))
-		emitInst("ADD", REG_FRAME, REG_ZERO, REG_A)
-
-		emitInstLoadImm(strconv.FormatInt(0x3000_0000, 16))
-		emitInst("ADD", REG_STACK, REG_ZERO, REG_A)
-
-		// Jump to main function
-		emitInstNOP()
-		emitInstNOP()
-		emitInstNOP()
-		emitInstNOP()
-
-		emitInst("ECALL", "00", "00", "00")
-	}
-
-	emitInstLinkMainFunc := func() {
-		var varInfo VarInfo = findVar("main")
-		var MAIN_FUNC_JUMP_INST_INDEX int = 16
-		setInstLoadImm(strconv.FormatInt(int64(varInfo.addr), 16), MAIN_FUNC_JUMP_INST_INDEX)
-		setInst("JALR", REG_A, REG_INST, REG_A, MAIN_FUNC_JUMP_INST_INDEX+3)
-	}
-
-	emitInstInit()
 
 	for peek().tokType != TT_EOF {
 		switch peek().tokType {
@@ -509,16 +467,45 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		}
 	}
 
-	emitInstLinkMainFunc()
+	emitInstInit := func() {
+		var allFuncInsts []string = allInsts[initInstsLen:]
 
-	for i, v := range instructions {
+		allInsts = make([]string, 0)
+
+		emitInstLoadImm(strconv.FormatInt(0x1000_0000, 16))
+		emitInst("ADD", REG_INST, REG_ZERO, REG_A)
+
+		emitInstLoadImm(strconv.FormatInt(0x2000_0000, 16))
+		emitInst("ADD", REG_GLOBAL, REG_ZERO, REG_A)
+
+		emitInstLoadImm(strconv.FormatInt(0x3000_0000, 16))
+		emitInst("ADD", REG_FRAME, REG_ZERO, REG_A)
+
+		emitInstLoadImm(strconv.FormatInt(0x3000_0000, 16))
+		emitInst("ADD", REG_STACK, REG_ZERO, REG_A)
+
+		emitInstLoadImm(strconv.FormatInt(int64(findVar("main").addr), 16))
+		emitInst("JALR", REG_A, REG_INST, REG_A)
+
+		emitInst("ECALL", "00", "00", "00")
+
+		for len(allInsts) != initInstsLen {
+			emitInstNOP()
+		}
+
+		allInsts = append(allInsts, allFuncInsts...)
+	}
+
+	emitInstInit()
+
+	for i, v := range allInsts {
 		fmt.Println(i, v)
 	}
 	for _, v := range varTable {
 		fmt.Println(v)
 	}
 
-	return instructions
+	return allInsts
 }
 
 func GenerateBytecode(instructions []string) string {
@@ -586,5 +573,6 @@ func main() {
 
 	insts := GenerateInstructions(toks)
 	byteCode := GenerateBytecode(insts)
-	fmt.Println(byteCode)
+
+	os.WriteFile(os.Args[2], []byte(byteCode), 0666)
 }
