@@ -421,6 +421,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	for peek().tokType != TT_EOF {
 		switch peek().tokType {
 		case TT_FUNC:
+
 			consume(TT_FUNC)
 
 			var currVarInfo VarInfo
@@ -442,7 +443,9 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			blockTable = append(blockTable, currBlockInfo)
 
 			currScope++
+
 		case TT_VAR:
+
 			consume(TT_VAR)
 
 			var currVarInfo VarInfo
@@ -460,9 +463,12 @@ func GenerateInstructions(toks []TokenInfo) []string {
 				currVarInfo.addr = getNextLocalVarAddr()
 			}
 			varTable = append(varTable, currVarInfo)
+
 		case TT_RBRACE:
+
 			var currBlockInfo BlockInfo = blockTable[len(blockTable)-1]
 			blockTable = blockTable[:len(blockTable)-1]
+
 			if currBlockInfo.blockType == BT_FUNC {
 				emitInst("ADD", R_STACK_PTR_X, R_ZERO_X, R_FRAME_PTR_X)
 				emitInstStackPopWord()
@@ -471,8 +477,11 @@ func GenerateInstructions(toks []TokenInfo) []string {
 				currScope = GLOBAL_SCOPE
 				clearLocalVarFromVarTable(currScope)
 			}
+
 			consume(TT_RBRACE)
+
 		case TT_IDENT:
+
 			var varInfo = findVar(consume(TT_IDENT).tokStr)
 			emitInstLoadImm(R_A, varInfo.addr)
 			emitInstStackPushWord()
@@ -488,6 +497,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			} else {
 				emitInstStackStoreLocalWord()
 			}
+
 		default:
 			advance()
 		}
