@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"strconv"
-	"strings"
 	"time"
 )
 
@@ -25,23 +23,11 @@ const (
 )
 
 func GetByteCode(f string) []byte {
-	var byteCode []byte
-
 	data, err := os.ReadFile(f)
 	if err != nil {
 		log.Fatal(err)
 	}
-
-	for data[len(data)-1] == 0x0a {
-		data = data[:len(data)-1]
-	}
-
-	var hexStr []string = strings.Split(string(data), ", ")
-	for _, v := range hexStr {
-		b, _ := strconv.ParseInt(v, 0, 64)
-		byteCode = append(byteCode, byte(b))
-	}
-	return byteCode
+	return data
 }
 
 func VMExecInst(vm VMState) VMState {
@@ -91,6 +77,11 @@ func VMExecInst(vm VMState) VMState {
 	var temp uint32
 
 	fmt.Println(op, p1, p2, p3)
+	fmt.Println(vm.pc)
+	fmt.Println(vm.reg)
+	fmt.Println(vm.mem[0x2000_0000>>2 : 0x2000_0080>>2])
+	fmt.Println(vm.mem[0x3000_0000>>2 : 0x3000_0080>>2])
+	fmt.Println("----")
 
 	switch op {
 	case ECALL:
@@ -124,12 +115,6 @@ func VMExecInst(vm VMState) VMState {
 
 	vm.reg[0] = 0
 
-	fmt.Println(vm.pc)
-	fmt.Println(vm.reg)
-	fmt.Println(vm.mem[0x2000_0000>>2 : 0x2000_0010>>2])
-	fmt.Println(vm.mem[0x3000_0000>>2 : 0x3000_0010>>2])
-	fmt.Println("----")
-
 	return vm
 }
 
@@ -137,9 +122,17 @@ func VMRun(vm VMState) {
 	if vm.status == VM_STATUS_READY {
 		vm.status = VM_STATUS_RUNNING
 	}
+
 	for vm.status == VM_STATUS_RUNNING {
 		vm = VMExecInst(vm)
-		time.Sleep(100 * time.Millisecond)
+		if vm.status == VM_STATUS_ERROR {
+			fmt.Println("VM STATUS: ERROR")
+		} else if vm.status == VM_STATUS_HALT {
+			fmt.Println("VM STATUS: HALT")
+		}
+		if len(os.Args) > 2 && os.Args[2] == "--debug" {
+			time.Sleep(100 * time.Millisecond)
+		}
 	}
 }
 
