@@ -251,10 +251,10 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	var (
 		REG_ZERO string = "00"
 
-		REG_INST   string = "01"
-		REG_GLOBAL string = "02"
-		REG_FRAME  string = "03"
-		REG_STACK  string = "04"
+		REG_STACK  string = "01"
+		REG_FRAME  string = "02"
+		REG_GLOBAL string = "03"
+		REG_INST   string = "04"
 
 		REG_A string = "08"
 		REG_B string = "09"
