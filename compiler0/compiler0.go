@@ -527,7 +527,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 	return allInsts
 }
 
-func GenerateBytecode(instructions []string) string {
+func GenerateBytecode(instructions []string) []byte {
 	InstHex := map[string]string{
 		"ECALL": "38",
 
@@ -569,17 +569,18 @@ func GenerateBytecode(instructions []string) string {
 	for opStr, hexStr := range InstHex {
 		instStr = strings.ReplaceAll(instStr, opStr+" ", hexStr+" ")
 	}
+
 	instructions = strings.Split(instStr, " ")
-	instStr = ""
-	for _, inst := range instructions {
-		if inst != "" {
-			instStr = instStr + "0x" + inst + ", "
+
+	var byteCode []byte
+	for _, hexStr := range instructions {
+		if hexStr != "" {
+			v, _ := strconv.ParseInt(hexStr, 16, 64)
+			byteCode = append(byteCode, uint8(v))
 		}
 	}
-	instStr = instStr[:len(instStr)-2]
-	instStr = string(append([]byte(instStr), 0x0a))
 
-	return instStr
+	return byteCode
 }
 
 func main() {
@@ -593,5 +594,5 @@ func main() {
 	insts := GenerateInstructions(toks)
 	byteCode := GenerateBytecode(insts)
 
-	os.WriteFile(os.Args[2], []byte(byteCode), 0666)
+	os.WriteFile(os.Args[2], byteCode, 0666)
 }
