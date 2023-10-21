@@ -392,7 +392,7 @@ func GenerateInstructions(toks []TokenInfo) []string {
 
 			var currVarInfo VarInfo
 			currVarInfo.ident = consume(TT_IDENT).tokStr
-			currVarInfo.varType = TT_FUNC
+			currVarInfo.varType = VT_FUNC
 			currVarInfo.scope = currScope
 			currVarInfo.addr = getNextInstAddr()
 			varTable = append(varTable, currVarInfo)
@@ -400,6 +400,8 @@ func GenerateInstructions(toks []TokenInfo) []string {
 			consume(TT_LPAREN)
 			consume(TT_RPAREN)
 			consume(TT_LBRACE)
+
+			emitInstNOP()
 
 			emitInstStackPushWord()
 			emitInst("ADD", REG_FRAME, REG_ZERO, REG_STACK)
@@ -433,21 +435,31 @@ func GenerateInstructions(toks []TokenInfo) []string {
 		case TT_IDENT:
 
 			var varInfo = findVar(consume(TT_IDENT).tokStr)
-			emitInstLoadImm(strconv.FormatInt(int64(varInfo.addr), 16))
-			emitInstStackPushWord()
 
-			consume(TT_ASSIGN)
+			fmt.Println(varInfo, varTable)
+			if varInfo.varType == VT_INT {
+				emitInstLoadImm(strconv.FormatInt(int64(varInfo.addr), 16))
+				emitInstStackPushWord()
 
-			v, _ := strconv.ParseInt(consume(TT_INT).tokStr, 0, 64)
+				consume(TT_ASSIGN)
 
-			emitInstLoadImm(strconv.FormatInt(int64(v), 16))
+				v, _ := strconv.ParseInt(consume(TT_INT).tokStr, 0, 64)
 
-			emitInstStackPushWord()
+				emitInstLoadImm(strconv.FormatInt(int64(v), 16))
 
-			if varInfo.scope == GLOBAL_SCOPE {
-				emitInstStackStoreGlobalWord()
-			} else {
-				emitInstStackStoreLocalWord()
+				emitInstStackPushWord()
+
+				if varInfo.scope == GLOBAL_SCOPE {
+					emitInstStackStoreGlobalWord()
+				} else {
+					emitInstStackStoreLocalWord()
+				}
+			} else if varInfo.varType == VT_FUNC {
+				emitInstLoadImm(strconv.FormatInt(int64(varInfo.addr), 16))
+				emitInst("JALR", REG_A, REG_INST, REG_A)
+
+				consume(TT_LPAREN)
+				consume(TT_RPAREN)
 			}
 
 		case TT_RBRACE:
@@ -466,8 +478,11 @@ func GenerateInstructions(toks []TokenInfo) []string {
 
 			consume(TT_RBRACE)
 
-		default:
+		case TT_NEW_LINE:
 			advance()
+		default:
+			fmt.Println("Error while compiling")
+			os.Exit(1)
 		}
 	}
 
