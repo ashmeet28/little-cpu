@@ -69,10 +69,18 @@ func VMExecInst(vm VMState) VMState {
 		vm.status = VM_STATUS_HALT
 
 	case OP_ADD:
+		vm.s[vm.sp-2] = vm.s[vm.sp-2] + vm.s[vm.sp-1]
+		vm.sp--
+		vm.pc++
+
 	case OP_SUB:
 	case OP_XOR:
 	case OP_OR:
 	case OP_AND:
+		vm.s[vm.sp-2] = vm.s[vm.sp-2] & vm.s[vm.sp-1]
+		vm.sp--
+		vm.pc++
+
 	case OP_SR:
 	case OP_SL:
 
@@ -84,7 +92,12 @@ func VMExecInst(vm VMState) VMState {
 		vm.pc += 4
 
 	case OP_PUSH_LOCAL:
+		vm.s[vm.sp-1] = vm.s[vm.s[vm.sp-1]+vm.fp]
+		vm.pc++
+
 	case OP_PUSH_GLOBAL:
+		vm.s[vm.sp-1] = vm.g[vm.s[vm.sp-1]]
+		vm.pc++
 
 	case OP_POP_LITERAL:
 	case OP_POP_LOCAL:
@@ -108,10 +121,9 @@ func VMExecInst(vm VMState) VMState {
 
 	case OP_CALL:
 		vm.rs[vm.rsp] = vm.pc + 1
-		vm.rsp++
+		vm.rs[vm.rsp+1] = vm.fp
 
-		vm.rs[vm.rsp] = vm.fp
-		vm.rsp++
+		vm.rsp += 2
 
 		vm.pc = vm.s[vm.sp-1]
 		vm.sp--
@@ -121,16 +133,24 @@ func VMExecInst(vm VMState) VMState {
 		vm.sp = vm.fp
 
 		vm.fp = vm.rs[vm.rsp-1]
-		vm.rsp--
-		vm.pc = vm.rs[vm.rsp-1]
-		vm.rsp--
+		vm.pc = vm.rs[vm.rsp-2]
+		vm.rsp -= 2
 
 	default:
 		vm.status = VM_STATUS_ERROR
 	}
 
-	fmt.Println(vm, op)
-	fmt.Println("-----")
+	fmt.Println(op)
+
+	fmt.Println("pc", vm.pc)
+	fmt.Println("sp", vm.sp)
+	fmt.Println("fp", vm.fp)
+	fmt.Println("s", vm.s)
+	fmt.Println("g", vm.g)
+	fmt.Println("rsp", vm.rsp)
+	fmt.Println("rs", vm.rs)
+
+	fmt.Println("------------------------------------")
 
 	return vm
 }
