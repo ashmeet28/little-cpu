@@ -93,6 +93,9 @@ func VMExecInst(vm VMState) VMState {
 		vm.pc++
 
 	case OP_POP_GLOBAL:
+		vm.g[vm.s[vm.sp-2]] = vm.s[vm.sp-1]
+		vm.sp -= 2
+		vm.pc++
 
 	case OP_EQ:
 	case OP_NE:
