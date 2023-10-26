@@ -7,10 +7,12 @@ import (
 	"strconv"
 )
 
+type TokenType int
+
 const (
 	// Token Types
 
-	TT_ILLEGAL int = iota
+	TT_ILLEGAL TokenType = iota
 	TT_EOF
 	TT_NEW_LINE
 	TT_SPACE
@@ -63,7 +65,7 @@ const (
 )
 
 type TokenInfo struct {
-	tokType int
+	tokType TokenType
 	tokStr  string
 }
 
@@ -130,7 +132,7 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 		srcStr = string(src)
 	}
 
-	TokensStrings := map[int]string{
+	TokensStrings := map[TokenType]string{
 		TT_ADD:    "+",
 		TT_SUB:    "-",
 		TT_MUL:    "*",
@@ -242,25 +244,34 @@ func GenerateTokens(src []byte) []TokenInfo {
 }
 
 func GenerateBytecode(toks []TokenInfo) []byte {
-	type VarInfo struct {
-		ident   string
-		varType int
-		scope   int
-		addr    int
-	}
+	type VarType int
 
 	const (
-		VT_ILLEGAL int = iota
+		VT_ILLEGAL VarType = iota
 		VT_FUNC
 		VT_INT
 	)
 
+	type VarInfo struct {
+		ident   string
+		varType VarType
+		scope   int
+		addr    int
+	}
+
+	type BlockType int
+
+	type BlockInfo struct {
+		blockType BlockType
+	}
+
 	const (
-		BT_ILLEGAL int = iota
+		BT_ILLEGAL BlockType = iota
 		BT_FUNC
 	)
 
 	var varTable []VarInfo
+	var blockTable []BlockInfo
 
 	var GLOBAL_SCOPE int = 1
 	var currScope int = GLOBAL_SCOPE
@@ -338,7 +349,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 		return tok
 	}
 
-	consume := func(tokType int) TokenInfo {
+	consume := func(tokType TokenType) TokenInfo {
 		tok := toks[0]
 		if tok.tokType != tokType {
 			fmt.Println("Error while consuming token")
@@ -395,6 +406,10 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 			varTable = append(varTable, currVarInfo)
 
+			var blockInfo BlockInfo
+			blockInfo.blockType = BT_FUNC
+			blockTable = append(blockTable, blockInfo)
+
 			consume(TT_LPAREN)
 			consume(TT_RPAREN)
 			consume(TT_LBRACE)
@@ -412,30 +427,50 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 			if currVarInfo.scope == GLOBAL_SCOPE {
 				currVarInfo.addr = getNextGlobalVarAddr()
+				emitPushLiteral(currVarInfo.addr)
+				emitPushLiteral(0)
+				emitByte(OP_POP_GLOBAL)
 			} else {
 				currVarInfo.addr = getNextLocalVarAddr()
 				emitPushLiteral(0)
 			}
 
+			varTable = append(varTable, currVarInfo)
+
 			consume(TT_NEW_LINE)
 
 		case TT_IDENT:
 			var varInfo = findVar(consume(TT_IDENT).tokStr)
-			consume(TT_ASSIGN)
+
 			emitPushLiteral(varInfo.addr)
+
+			consume(TT_ASSIGN)
+
 			v, _ := strconv.ParseInt(consume(TT_INT).tokStr, 0, 64)
 			emitPushLiteral(int(v))
-			emitByte(OP_POP_LOCAL)
+
+			if varInfo.scope == GLOBAL_SCOPE {
+				emitByte(OP_POP_GLOBAL)
+			} else {
+				emitByte(OP_POP_LOCAL)
+			}
+
 			consume(TT_NEW_LINE)
 
 		case TT_RBRACE:
 
-			currScope = GLOBAL_SCOPE
-			clearLocalVarFromVarTable(currScope)
+			var blockInfo BlockInfo
+			blockInfo = blockTable[len(blockTable)-1]
+			blockTable = blockTable[:len(blockTable)-1]
 
-			emitByte(OP_RETURN)
+			if blockInfo.blockType == BT_FUNC {
+				currScope = GLOBAL_SCOPE
+				clearLocalVarFromVarTable(currScope)
+				emitByte(OP_RETURN)
+			}
 
 			consume(TT_RBRACE)
+			consume(TT_NEW_LINE)
 
 		case TT_NEW_LINE:
 			advance()
