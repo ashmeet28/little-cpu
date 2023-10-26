@@ -393,6 +393,97 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	emitByte(OP_CALL)
 	emitByte(OP_ECALL)
 
+	compileExpr := func() {
+		// Using shunting yard algorithm
+
+		opPrec := map[TokenType]int{
+			TT_SHL: 5,
+			TT_SHR: 5,
+			TT_AND: 5,
+
+			TT_ADD: 4,
+			TT_SUB: 4,
+			TT_OR:  4,
+			TT_XOR: 4,
+
+			TT_EQL: 3,
+			TT_NEQ: 3,
+			TT_LSS: 3,
+			TT_LEQ: 3,
+			TT_GTR: 3,
+			TT_GEQ: 3,
+
+			TT_LAND: 2,
+
+			TT_LOR: 1,
+		}
+
+		var opStack []TokenInfo
+
+		isOP := func(tokType TokenType) bool {
+			_, ok := opPrec[tokType]
+			return ok
+		}
+
+		popOP := func() {
+			var op TokenType = opStack[len(opStack)-1].tokType
+			opStack = opStack[:len(opStack)-1]
+			switch op {
+			case TT_ADD:
+				emitByte(OP_ADD)
+			case TT_AND:
+				emitByte(OP_AND)
+			}
+		}
+
+		for peek().tokType != TT_NEW_LINE {
+			var tok TokenInfo = peek()
+
+			if tok.tokType == TT_INT {
+
+				v, _ := strconv.ParseInt(consume(TT_INT).tokStr, 0, 64)
+				emitPushLiteral(int(v))
+
+			} else if tok.tokType == TT_IDENT {
+
+				var varInfo = findVar(consume(TT_IDENT).tokStr)
+				emitPushLiteral(varInfo.addr)
+				if varInfo.scope == GLOBAL_SCOPE {
+					emitByte(OP_PUSH_GLOBAL)
+				} else {
+					emitByte(OP_PUSH_LOCAL)
+				}
+
+			} else if isOP(tok.tokType) {
+
+				var currOP TokenType = tok.tokType
+				for len(opStack) > 0 {
+					var prevOP TokenType = opStack[len(opStack)-1].tokType
+					if (prevOP != TT_LPAREN) && (opPrec[prevOP] > opPrec[currOP]) {
+						popOP()
+					} else {
+						break
+					}
+				}
+				opStack = append(opStack, advance())
+
+			} else if tok.tokType == TT_LPAREN {
+				opStack = append(opStack, consume(TT_LPAREN))
+			} else if tok.tokType == TT_RPAREN {
+				for opStack[len(opStack)-1].tokType != TT_LPAREN {
+					popOP()
+				}
+				opStack = opStack[:len(opStack)-1]
+				consume(TT_RPAREN)
+			}
+
+		}
+
+		for len(opStack) > 0 {
+			popOP()
+		}
+	}
+
 	for peek().tokType != TT_EOF {
 		switch peek().tokType {
 		case TT_FUNC:
@@ -446,8 +537,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 			consume(TT_ASSIGN)
 
-			v, _ := strconv.ParseInt(consume(TT_INT).tokStr, 0, 64)
-			emitPushLiteral(int(v))
+			compileExpr()
 
 			if varInfo.scope == GLOBAL_SCOPE {
 				emitByte(OP_POP_GLOBAL)
