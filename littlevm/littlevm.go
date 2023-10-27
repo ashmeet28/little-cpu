@@ -18,15 +18,21 @@ const (
 type VMState struct {
 	pc       uint32
 	byteCode []byte
-	sp       uint32
-	fp       uint32
-	s        []uint32
-	fasp     uint32
-	fas      []uint32
-	rsp      uint32
-	rs       []uint32
-	g        []uint32
-	status   int
+
+	sp uint32
+	fp uint32
+	s  []uint32
+
+	rsp uint32
+	rs  []uint32
+
+	fasp uint32
+	fas  []uint32
+	frv  uint32
+
+	g []uint32
+
+	status int
 }
 
 var (
@@ -41,22 +47,26 @@ var (
 	OP_SR  byte = 9
 	OP_SL  byte = 10
 
-	OP_PUSH_LITERAL byte = 16
-	OP_PUSH_LOCAL   byte = 17
-	OP_PUSH_GLOBAL  byte = 18
+	OP_PUSH_LITERAL      byte = 12
+	OP_PUSH_LOCAL        byte = 13
+	OP_PUSH_GLOBAL       byte = 14
+	OP_PUSH_FUNC_ARG     byte = 15
+	OP_PUSH_FUNC_RET_VAL byte = 16
 
-	OP_POP_LITERAL byte = 20
-	OP_POP_LOCAL   byte = 21
-	OP_POP_GLOBAL  byte = 22
+	OP_POP_LITERAL      byte = 20
+	OP_POP_LOCAL        byte = 21
+	OP_POP_GLOBAL       byte = 22
+	OP_POP_FUNC_ARG     byte = 23
+	OP_POP_FUNC_RET_VAL byte = 24
 
-	OP_EQ byte = 24
-	OP_NE byte = 25
-	OP_LT byte = 26
-	OP_GE byte = 27
+	OP_EQ byte = 28
+	OP_NE byte = 29
+	OP_LT byte = 30
+	OP_GE byte = 31
 
-	OP_JUMP   byte = 28
-	OP_CALL   byte = 29
-	OP_RETURN byte = 30
+	OP_JUMP   byte = 32
+	OP_CALL   byte = 33
+	OP_RETURN byte = 34
 )
 
 func VMExecInst(vm VMState) VMState {
@@ -87,11 +97,9 @@ func VMExecInst(vm VMState) VMState {
 	case OP_SL:
 
 	case OP_PUSH_LITERAL:
-		vm.pc++
-
-		vm.s[vm.sp] = uint32(vm.byteCode[vm.pc]) | (uint32(vm.byteCode[vm.pc+1]) << 8) | (uint32(vm.byteCode[vm.pc+2]) << 16) | (uint32(vm.byteCode[vm.pc+3]) << 24)
+		vm.s[vm.sp] = uint32(vm.byteCode[vm.pc+1]) | (uint32(vm.byteCode[vm.pc+2]) << 8) | (uint32(vm.byteCode[vm.pc+3]) << 16) | (uint32(vm.byteCode[vm.pc+4]) << 24)
 		vm.sp++
-		vm.pc += 4
+		vm.pc += 5
 
 	case OP_PUSH_LOCAL:
 		vm.s[vm.sp-1] = vm.s[vm.s[vm.sp-1]+vm.fp]
@@ -99,6 +107,17 @@ func VMExecInst(vm VMState) VMState {
 
 	case OP_PUSH_GLOBAL:
 		vm.s[vm.sp-1] = vm.g[vm.s[vm.sp-1]]
+		vm.pc++
+
+	case OP_PUSH_FUNC_ARG:
+		vm.s[vm.sp] = vm.fas[vm.fasp-1]
+		vm.sp++
+		vm.fasp--
+		vm.pc++
+
+	case OP_PUSH_FUNC_RET_VAL:
+		vm.s[vm.sp] = vm.frv
+		vm.sp++
 		vm.pc++
 
 	case OP_POP_LITERAL:
@@ -110,6 +129,17 @@ func VMExecInst(vm VMState) VMState {
 	case OP_POP_GLOBAL:
 		vm.g[vm.s[vm.sp-2]] = vm.s[vm.sp-1]
 		vm.sp -= 2
+		vm.pc++
+
+	case OP_POP_FUNC_ARG:
+		vm.fas[vm.fasp] = vm.s[vm.sp-1]
+		vm.sp--
+		vm.fasp++
+		vm.pc++
+
+	case OP_POP_FUNC_RET_VAL:
+		vm.frv = vm.s[vm.sp-1]
+		vm.sp--
 		vm.pc++
 
 	case OP_EQ:
