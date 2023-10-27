@@ -342,11 +342,11 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	findVar := func(ident string) VarInfo {
 		var varInfo VarInfo
 		varInfo.varType = VT_ILLEGAL
+		varInfo.scope = 0
 
 		for _, v := range varTable {
-			if v.ident == ident {
+			if (v.ident == ident) && (v.scope > varInfo.scope) {
 				varInfo = v
-				break
 			}
 		}
 
@@ -450,8 +450,26 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			switch op {
 			case TT_ADD:
 				emitByte(OP_ADD)
+			case TT_SUB:
+				emitByte(OP_SUB)
+			case TT_XOR:
+				emitByte(OP_XOR)
+			case TT_OR:
+				emitByte(OP_OR)
 			case TT_AND:
 				emitByte(OP_AND)
+			case TT_SHR:
+				emitByte(OP_SR)
+			case TT_SHL:
+				emitByte(OP_SL)
+			case TT_EQL:
+				emitByte(OP_EQ)
+			case TT_NEQ:
+				emitByte(OP_NE)
+			case TT_LSS:
+				emitByte(OP_LT)
+			case TT_GEQ:
+				emitByte(OP_GE)
 			}
 		}
 
@@ -501,6 +519,22 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 		for len(opStack) > 0 {
 			popOP()
 		}
+	}
+
+	compileFuncExpr := func() {
+		var varInfo VarInfo = findVar(consume(TT_IDENT).tokStr)
+		consume(TT_LPAREN)
+		for i := range varInfo.funcArgs {
+			if i == (len(varInfo.funcArgs) - 1) {
+				compileExpr(TT_RPAREN)
+			} else {
+				compileExpr(TT_COMMA)
+				consume(TT_COMMA)
+			}
+			emitByte(OP_POP_FUNC_ARG)
+		}
+		consume(TT_RPAREN)
+		emitByte(OP_CALL)
 	}
 
 	for peek().tokType != TT_EOF {
@@ -574,11 +608,12 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			consume(TT_NEW_LINE)
 
 		case TT_IDENT:
-			var varInfo VarInfo = findVar(consume(TT_IDENT).tokStr)
+			var varInfo VarInfo = findVar(peek().tokStr)
 
 			emitPushLiteral(varInfo.addr)
 
 			if varInfo.varType == VT_INT {
+				consume(TT_IDENT)
 				consume(TT_ASSIGN)
 
 				compileExpr(TT_NEW_LINE)
@@ -589,18 +624,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 					emitByte(OP_POP_LOCAL)
 				}
 			} else if varInfo.varType == VT_FUNC {
-				consume(TT_LPAREN)
-				for i := range varInfo.funcArgs {
-					if i == (len(varInfo.funcArgs) - 1) {
-						compileExpr(TT_RPAREN)
-					} else {
-						compileExpr(TT_COMMA)
-						consume(TT_COMMA)
-					}
-					emitByte(OP_POP_FUNC_ARG)
-				}
-				consume(TT_RPAREN)
-				emitByte(OP_CALL)
+				compileFuncExpr()
 			}
 
 			consume(TT_NEW_LINE)

@@ -87,15 +87,34 @@ func VMExecInst(vm VMState) VMState {
 		vm.pc++
 
 	case OP_SUB:
+		vm.s[vm.sp-2] = vm.s[vm.sp-2] - vm.s[vm.sp-1]
+		vm.sp--
+		vm.pc++
+
 	case OP_XOR:
+		vm.s[vm.sp-2] = vm.s[vm.sp-2] ^ vm.s[vm.sp-1]
+		vm.sp--
+		vm.pc++
+
 	case OP_OR:
+		vm.s[vm.sp-2] = vm.s[vm.sp-2] | vm.s[vm.sp-1]
+		vm.sp--
+		vm.pc++
+
 	case OP_AND:
 		vm.s[vm.sp-2] = vm.s[vm.sp-2] & vm.s[vm.sp-1]
 		vm.sp--
 		vm.pc++
 
 	case OP_SR:
+		vm.s[vm.sp-2] = vm.s[vm.sp-2] >> vm.s[vm.sp-1]
+		vm.sp--
+		vm.pc++
+
 	case OP_SL:
+		vm.s[vm.sp-2] = vm.s[vm.sp-2] << vm.s[vm.sp-1]
+		vm.sp--
+		vm.pc++
 
 	case OP_PUSH_LITERAL:
 		vm.s[vm.sp] = uint32(vm.byteCode[vm.pc+1]) | (uint32(vm.byteCode[vm.pc+2]) << 8) | (uint32(vm.byteCode[vm.pc+3]) << 16) | (uint32(vm.byteCode[vm.pc+4]) << 24)
@@ -122,6 +141,9 @@ func VMExecInst(vm VMState) VMState {
 		vm.pc++
 
 	case OP_POP_LITERAL:
+		vm.sp--
+		vm.pc++
+
 	case OP_POP_LOCAL:
 		vm.s[vm.s[vm.sp-2]+vm.fp] = vm.s[vm.sp-1]
 		vm.sp -= 2
@@ -144,9 +166,44 @@ func VMExecInst(vm VMState) VMState {
 		vm.pc++
 
 	case OP_EQ:
+		if vm.s[vm.sp-2] == vm.s[vm.sp-1] {
+			vm.s[vm.sp-2] = 1
+		} else {
+			vm.s[vm.sp-2] = 0
+		}
+
+		vm.sp--
+		vm.pc++
+
 	case OP_NE:
+		if vm.s[vm.sp-2] != vm.s[vm.sp-1] {
+			vm.s[vm.sp-2] = 1
+		} else {
+			vm.s[vm.sp-2] = 0
+		}
+
+		vm.sp--
+		vm.pc++
+
 	case OP_LT:
+		if vm.s[vm.sp-2] < vm.s[vm.sp-1] {
+			vm.s[vm.sp-2] = 1
+		} else {
+			vm.s[vm.sp-2] = 0
+		}
+
+		vm.sp--
+		vm.pc++
+
 	case OP_GE:
+		if vm.s[vm.sp-2] >= vm.s[vm.sp-1] {
+			vm.s[vm.sp-2] = 1
+		} else {
+			vm.s[vm.sp-2] = 0
+		}
+
+		vm.sp--
+		vm.pc++
 
 	case OP_JUMP:
 		vm.pc = vm.s[vm.sp-1]
@@ -225,10 +282,10 @@ func VMCreate(byteCode []byte) VMState {
 
 	vm.sp = 0
 	vm.fp = 0
-	vm.s = make([]uint32, 16)
+	vm.s = make([]uint32, 32)
 
 	vm.rsp = 0
-	vm.rs = make([]uint32, 16)
+	vm.rs = make([]uint32, 32)
 
 	vm.fasp = 0
 	vm.fas = make([]uint32, 8)
