@@ -81,22 +81,26 @@ var (
 	OP_SR  byte = 9
 	OP_SL  byte = 10
 
-	OP_PUSH_LITERAL byte = 16
-	OP_PUSH_LOCAL   byte = 17
-	OP_PUSH_GLOBAL  byte = 18
+	OP_PUSH_LITERAL      byte = 12
+	OP_PUSH_LOCAL        byte = 13
+	OP_PUSH_GLOBAL       byte = 14
+	OP_PUSH_FUNC_ARG     byte = 15
+	OP_PUSH_FUNC_RET_VAL byte = 16
 
-	OP_POP_LITERAL byte = 20
-	OP_POP_LOCAL   byte = 21
-	OP_POP_GLOBAL  byte = 22
+	OP_POP_LITERAL      byte = 20
+	OP_POP_LOCAL        byte = 21
+	OP_POP_GLOBAL       byte = 22
+	OP_POP_FUNC_ARG     byte = 23
+	OP_POP_FUNC_RET_VAL byte = 24
 
-	OP_EQ byte = 24
-	OP_NE byte = 25
-	OP_LT byte = 26
-	OP_GE byte = 27
+	OP_EQ byte = 28
+	OP_NE byte = 29
+	OP_LT byte = 30
+	OP_GE byte = 31
 
-	OP_JUMP   byte = 28
-	OP_CALL   byte = 29
-	OP_RETURN byte = 30
+	OP_JUMP   byte = 32
+	OP_CALL   byte = 33
+	OP_RETURN byte = 34
 )
 
 func GenerateToken(src []byte) (TokenInfo, int) {
@@ -581,6 +585,8 @@ func main() {
 	if err != nil {
 		log.Fatal(err)
 	}
+
+	data = append(data, 0x0a)
 
 	toks := GenerateTokens(data)
 
