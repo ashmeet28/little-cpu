@@ -70,6 +70,8 @@ var (
 	OP_RETURN byte = 34
 )
 
+var IsDebugOn bool = false
+
 func VMExecInst(vm VMState) VMState {
 	var op byte = vm.byteCode[vm.pc]
 
@@ -230,25 +232,27 @@ func VMExecInst(vm VMState) VMState {
 		vm.status = VM_STATUS_ERROR
 	}
 
-	fmt.Println(op)
+	if IsDebugOn {
+		fmt.Println(op)
 
-	fmt.Println("pc", vm.pc)
+		fmt.Println("pc", vm.pc)
 
-	fmt.Println("s", vm.s)
-	fmt.Println("sp", vm.sp)
-	fmt.Println("fp", vm.fp)
+		fmt.Println("s", vm.s)
+		fmt.Println("sp", vm.sp)
+		fmt.Println("fp", vm.fp)
 
-	fmt.Println("rs", vm.rs)
-	fmt.Println("rsp", vm.rsp)
+		fmt.Println("rs", vm.rs)
+		fmt.Println("rsp", vm.rsp)
 
-	fmt.Println("fas", vm.fas)
-	fmt.Println("fasp", vm.fasp)
+		fmt.Println("fas", vm.fas)
+		fmt.Println("fasp", vm.fasp)
 
-	fmt.Println("frv", vm.frv)
+		fmt.Println("frv", vm.frv)
 
-	fmt.Println("g", vm.g)
+		fmt.Println("g", vm.g)
 
-	fmt.Println("------------------------------------")
+		fmt.Println("------------------------------------")
+	}
 
 	return vm
 }
@@ -267,7 +271,7 @@ func VMRun(vm VMState) {
 			fmt.Println("VM STATUS: HALT")
 		}
 
-		if len(os.Args) > 2 && os.Args[2] == "--debug" {
+		if IsDebugOn {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
@@ -308,6 +312,10 @@ func GetByteCode(p string) []byte {
 }
 
 func main() {
+	if len(os.Args) > 2 && os.Args[2] == "--debug" {
+		IsDebugOn = true
+	}
+
 	vm := VMCreate(GetByteCode(os.Args[1]))
 	VMRun(vm)
 }
