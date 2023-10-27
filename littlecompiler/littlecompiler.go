@@ -104,7 +104,7 @@ var (
 )
 
 func GenerateToken(src []byte) (TokenInfo, int) {
-	var bytesConsumed int
+	var bytesConsumed int = 0
 
 	var currTok TokenInfo
 	currTok.tokType = TT_ILLEGAL
@@ -121,6 +121,15 @@ func GenerateToken(src []byte) (TokenInfo, int) {
 		currTok.tokType = TT_SPACE
 		bytesConsumed = 1
 		return currTok, bytesConsumed
+	} else if len(src) > 2 && src[0] == 0x2f && src[1] == 0x2f {
+		currTok.tokType = TT_NEW_LINE
+		bytesConsumed = 0
+		for _, b := range src {
+			bytesConsumed++
+			if b == 0x0a {
+				return currTok, bytesConsumed
+			}
+		}
 	}
 
 	var srcStr string
@@ -589,6 +598,7 @@ func main() {
 	data = append(data, 0x0a)
 
 	toks := GenerateTokens(data)
+	fmt.Println(toks)
 
 	byteCode := GenerateBytecode(toks)
 
