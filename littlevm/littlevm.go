@@ -19,16 +19,17 @@ type VMState struct {
 	pc       uint32
 	byteCode []byte
 
+	s  []uint32
 	sp uint32
 	fp uint32
-	s  []uint32
 
-	rsp uint32
 	rs  []uint32
+	rsp uint32
 
-	fasp uint32
 	fas  []uint32
-	frv  uint32
+	fasp uint32
+
+	frv uint32
 
 	g []uint32
 
@@ -175,11 +176,19 @@ func VMExecInst(vm VMState) VMState {
 	fmt.Println(op)
 
 	fmt.Println("pc", vm.pc)
+
+	fmt.Println("s", vm.s)
 	fmt.Println("sp", vm.sp)
 	fmt.Println("fp", vm.fp)
-	fmt.Println("s", vm.s)
-	fmt.Println("rsp", vm.rsp)
+
 	fmt.Println("rs", vm.rs)
+	fmt.Println("rsp", vm.rsp)
+
+	fmt.Println("fas", vm.fas)
+	fmt.Println("fasp", vm.fasp)
+
+	fmt.Println("frv", vm.frv)
+
 	fmt.Println("g", vm.g)
 
 	fmt.Println("------------------------------------")
@@ -218,10 +227,15 @@ func VMCreate(byteCode []byte) VMState {
 	vm.fp = 0
 	vm.s = make([]uint32, 16)
 
-	vm.g = make([]uint32, 16)
-
 	vm.rsp = 0
 	vm.rs = make([]uint32, 16)
+
+	vm.fasp = 0
+	vm.fas = make([]uint32, 8)
+
+	vm.frv = 0
+
+	vm.g = make([]uint32, 16)
 
 	vm.status = VM_STATUS_READY
 
