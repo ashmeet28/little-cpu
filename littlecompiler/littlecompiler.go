@@ -270,6 +270,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 		varType VarType
 		scope   int
 		addr    int
+		funcSig []VarInfo
 	}
 
 	type BlockType int
@@ -459,7 +460,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 			} else if tok.tokType == TT_IDENT {
 
-				var varInfo = findVar(consume(TT_IDENT).tokStr)
+				var varInfo VarInfo = findVar(consume(TT_IDENT).tokStr)
 				emitPushLiteral(varInfo.addr)
 				if varInfo.scope == GLOBAL_SCOPE {
 					emitByte(OP_PUSH_GLOBAL)
@@ -508,18 +509,36 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			currVarInfo.scope = currScope
 			currVarInfo.addr = getNextByteAddr()
 
-			varTable = append(varTable, currVarInfo)
-
 			var blockInfo BlockInfo
 			blockInfo.blockType = BT_FUNC
 			blockTable = append(blockTable, blockInfo)
 
 			consume(TT_LPAREN)
+			currScope++
+
+			for peek().tokType == TT_IDENT {
+				fmt.Println("jj")
+				var argInfo VarInfo
+				argInfo.ident = consume(TT_IDENT).tokStr
+				argInfo.varType = VT_INT
+				argInfo.scope = currScope
+
+				currVarInfo.funcSig = append(currVarInfo.funcSig, argInfo)
+
+				if peek().tokType != TT_RPAREN {
+					consume(TT_COMMA)
+				}
+			}
+
 			consume(TT_RPAREN)
+
+			varTable = append(varTable, currVarInfo)
+
 			consume(TT_LBRACE)
 			consume(TT_NEW_LINE)
 
-			currScope++
+			emitPushLiteral(0)
+			emitByte(OP_POP_FUNC_RET_VAL)
 
 		case TT_VAR:
 			consume(TT_VAR)
@@ -544,18 +563,24 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			consume(TT_NEW_LINE)
 
 		case TT_IDENT:
-			var varInfo = findVar(consume(TT_IDENT).tokStr)
+			var varInfo VarInfo = findVar(consume(TT_IDENT).tokStr)
 
 			emitPushLiteral(varInfo.addr)
 
-			consume(TT_ASSIGN)
+			if varInfo.varType == VT_INT {
+				consume(TT_ASSIGN)
 
-			compileExpr()
+				compileExpr()
 
-			if varInfo.scope == GLOBAL_SCOPE {
-				emitByte(OP_POP_GLOBAL)
-			} else {
-				emitByte(OP_POP_LOCAL)
+				if varInfo.scope == GLOBAL_SCOPE {
+					emitByte(OP_POP_GLOBAL)
+				} else {
+					emitByte(OP_POP_LOCAL)
+				}
+			} else if varInfo.varType == VT_FUNC {
+				consume(TT_LPAREN)
+				consume(TT_RPAREN)
+				emitByte(OP_CALL)
 			}
 
 			consume(TT_NEW_LINE)
@@ -567,7 +592,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			blockTable = blockTable[:len(blockTable)-1]
 
 			if blockInfo.blockType == BT_FUNC {
-				currScope = GLOBAL_SCOPE
+				currScope--
 				clearLocalVarFromVarTable(currScope)
 				emitByte(OP_RETURN)
 			}
@@ -585,7 +610,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	}
 
 	setPushBlankLiteral(int(findVar("main").addr))
-
+	fmt.Println(varTable)
 	return allBytes
 }
 
@@ -598,11 +623,8 @@ func main() {
 	data = append(data, 0x0a)
 
 	toks := GenerateTokens(data)
-	fmt.Println(toks)
 
 	byteCode := GenerateBytecode(toks)
-
-	fmt.Println(byteCode)
 
 	os.WriteFile(os.Args[2], byteCode, 0666)
 }
