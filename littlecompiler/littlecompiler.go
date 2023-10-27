@@ -412,7 +412,8 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	emitByte(OP_CALL)
 	emitByte(OP_ECALL)
 
-	compileExpr := func(endTokType TokenType) {
+	var compileExpr func(TokenType)
+	compileExpr = func(endTokType TokenType) {
 		// Using shunting yard algorithm
 
 		opPrec := map[TokenType]int{
@@ -485,10 +486,27 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 				var varInfo VarInfo = findVar(consume(TT_IDENT).tokStr)
 				emitPushLiteral(varInfo.addr)
-				if varInfo.scope == GLOBAL_SCOPE {
-					emitByte(OP_PUSH_GLOBAL)
-				} else {
-					emitByte(OP_PUSH_LOCAL)
+
+				if varInfo.varType == VT_INT {
+					if varInfo.scope == GLOBAL_SCOPE {
+						emitByte(OP_PUSH_GLOBAL)
+					} else {
+						emitByte(OP_PUSH_LOCAL)
+					}
+				} else if varInfo.varType == VT_FUNC {
+					consume(TT_LPAREN)
+					for i := range varInfo.funcArgs {
+						if i == (len(varInfo.funcArgs) - 1) {
+							compileExpr(TT_RPAREN)
+						} else {
+							compileExpr(TT_COMMA)
+							consume(TT_COMMA)
+						}
+						emitByte(OP_POP_FUNC_ARG)
+					}
+					consume(TT_RPAREN)
+					emitByte(OP_CALL)
+					emitByte(OP_PUSH_FUNC_RET_VAL)
 				}
 
 			} else if isOP(tok.tokType) {
@@ -519,22 +537,6 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 		for len(opStack) > 0 {
 			popOP()
 		}
-	}
-
-	compileFuncExpr := func() {
-		var varInfo VarInfo = findVar(consume(TT_IDENT).tokStr)
-		consume(TT_LPAREN)
-		for i := range varInfo.funcArgs {
-			if i == (len(varInfo.funcArgs) - 1) {
-				compileExpr(TT_RPAREN)
-			} else {
-				compileExpr(TT_COMMA)
-				consume(TT_COMMA)
-			}
-			emitByte(OP_POP_FUNC_ARG)
-		}
-		consume(TT_RPAREN)
-		emitByte(OP_CALL)
 	}
 
 	for peek().tokType != TT_EOF {
@@ -610,10 +612,9 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 		case TT_IDENT:
 			var varInfo VarInfo = findVar(peek().tokStr)
 
-			emitPushLiteral(varInfo.addr)
-
 			if varInfo.varType == VT_INT {
 				consume(TT_IDENT)
+				emitPushLiteral(varInfo.addr)
 				consume(TT_ASSIGN)
 
 				compileExpr(TT_NEW_LINE)
@@ -624,7 +625,8 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 					emitByte(OP_POP_LOCAL)
 				}
 			} else if varInfo.varType == VT_FUNC {
-				compileFuncExpr()
+				compileExpr(TT_NEW_LINE)
+				emitByte(OP_POP_LITERAL)
 			}
 
 			consume(TT_NEW_LINE)
@@ -644,6 +646,13 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			}
 
 			consume(TT_RBRACE)
+			consume(TT_NEW_LINE)
+
+		case TT_RETURN:
+			consume(TT_RETURN)
+			compileExpr(TT_NEW_LINE)
+			emitByte(OP_POP_FUNC_RET_VAL)
+			emitByte(OP_RETURN)
 			consume(TT_NEW_LINE)
 
 		case TT_NEW_LINE:
