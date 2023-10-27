@@ -21,43 +21,45 @@ type VMState struct {
 	sp       uint32
 	fp       uint32
 	s        []uint32
-	g        []uint32
+	fasp     uint32
+	fas      []uint32
 	rsp      uint32
 	rs       []uint32
+	g        []uint32
 	status   int
 }
 
+var (
+	OP_NOP   byte = 1
+	OP_ECALL byte = 2
+
+	OP_ADD byte = 4
+	OP_SUB byte = 5
+	OP_XOR byte = 6
+	OP_OR  byte = 7
+	OP_AND byte = 8
+	OP_SR  byte = 9
+	OP_SL  byte = 10
+
+	OP_PUSH_LITERAL byte = 16
+	OP_PUSH_LOCAL   byte = 17
+	OP_PUSH_GLOBAL  byte = 18
+
+	OP_POP_LITERAL byte = 20
+	OP_POP_LOCAL   byte = 21
+	OP_POP_GLOBAL  byte = 22
+
+	OP_EQ byte = 24
+	OP_NE byte = 25
+	OP_LT byte = 26
+	OP_GE byte = 27
+
+	OP_JUMP   byte = 28
+	OP_CALL   byte = 29
+	OP_RETURN byte = 30
+)
+
 func VMExecInst(vm VMState) VMState {
-	var (
-		OP_NOP   byte = 1
-		OP_ECALL byte = 2
-
-		OP_ADD byte = 4
-		OP_SUB byte = 5
-		OP_XOR byte = 6
-		OP_OR  byte = 7
-		OP_AND byte = 8
-		OP_SR  byte = 9
-		OP_SL  byte = 10
-
-		OP_PUSH_LITERAL byte = 16
-		OP_PUSH_LOCAL   byte = 17
-		OP_PUSH_GLOBAL  byte = 18
-
-		OP_POP_LITERAL byte = 20
-		OP_POP_LOCAL   byte = 21
-		OP_POP_GLOBAL  byte = 22
-
-		OP_EQ byte = 24
-		OP_NE byte = 25
-		OP_LT byte = 26
-		OP_GE byte = 27
-
-		OP_JUMP   byte = 28
-		OP_CALL   byte = 29
-		OP_RETURN byte = 30
-	)
-
 	var op byte = vm.byteCode[vm.pc]
 
 	switch op {
@@ -146,9 +148,9 @@ func VMExecInst(vm VMState) VMState {
 	fmt.Println("sp", vm.sp)
 	fmt.Println("fp", vm.fp)
 	fmt.Println("s", vm.s)
-	fmt.Println("g", vm.g)
 	fmt.Println("rsp", vm.rsp)
 	fmt.Println("rs", vm.rs)
+	fmt.Println("g", vm.g)
 
 	fmt.Println("------------------------------------")
 
