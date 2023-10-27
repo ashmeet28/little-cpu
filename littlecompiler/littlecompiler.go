@@ -266,11 +266,11 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	)
 
 	type VarInfo struct {
-		ident   string
-		varType VarType
-		scope   int
-		addr    int
-		funcSig []VarInfo
+		ident    string
+		varType  VarType
+		scope    int
+		addr     int
+		funcArgs []VarInfo
 	}
 
 	type BlockType int
@@ -350,6 +350,11 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			}
 		}
 
+		if varInfo.varType == VT_ILLEGAL {
+			fmt.Println("Error while compiling")
+			os.Exit(1)
+		}
+
 		return varInfo
 	}
 
@@ -407,7 +412,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	emitByte(OP_CALL)
 	emitByte(OP_ECALL)
 
-	compileExpr := func() {
+	compileExpr := func(endTokType TokenType) {
 		// Using shunting yard algorithm
 
 		opPrec := map[TokenType]int{
@@ -450,7 +455,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			}
 		}
 
-		for peek().tokType != TT_NEW_LINE {
+		for peek().tokType != endTokType {
 			var tok TokenInfo = peek()
 
 			if tok.tokType == TT_INT {
@@ -517,13 +522,18 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			currScope++
 
 			for peek().tokType == TT_IDENT {
-				fmt.Println("jj")
 				var argInfo VarInfo
 				argInfo.ident = consume(TT_IDENT).tokStr
 				argInfo.varType = VT_INT
 				argInfo.scope = currScope
+				argInfo.addr = len(currVarInfo.funcArgs)
 
-				currVarInfo.funcSig = append(currVarInfo.funcSig, argInfo)
+				currVarInfo.funcArgs = append(currVarInfo.funcArgs, argInfo)
+
+				emitPushLiteral(0)
+				emitPushLiteral(argInfo.addr)
+				emitByte(OP_PUSH_FUNC_ARG)
+				emitByte(OP_POP_LOCAL)
 
 				if peek().tokType != TT_RPAREN {
 					consume(TT_COMMA)
@@ -533,6 +543,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			consume(TT_RPAREN)
 
 			varTable = append(varTable, currVarInfo)
+			varTable = append(varTable, currVarInfo.funcArgs...)
 
 			consume(TT_LBRACE)
 			consume(TT_NEW_LINE)
@@ -570,7 +581,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			if varInfo.varType == VT_INT {
 				consume(TT_ASSIGN)
 
-				compileExpr()
+				compileExpr(TT_NEW_LINE)
 
 				if varInfo.scope == GLOBAL_SCOPE {
 					emitByte(OP_POP_GLOBAL)
@@ -579,6 +590,15 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 				}
 			} else if varInfo.varType == VT_FUNC {
 				consume(TT_LPAREN)
+				for i := range varInfo.funcArgs {
+					if i == (len(varInfo.funcArgs) - 1) {
+						compileExpr(TT_RPAREN)
+					} else {
+						compileExpr(TT_COMMA)
+						consume(TT_COMMA)
+					}
+					emitByte(OP_POP_FUNC_ARG)
+				}
 				consume(TT_RPAREN)
 				emitByte(OP_CALL)
 			}
@@ -593,7 +613,9 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 			if blockInfo.blockType == BT_FUNC {
 				currScope--
+				fmt.Println(varTable)
 				clearLocalVarFromVarTable(currScope)
+				fmt.Println(varTable)
 				emitByte(OP_RETURN)
 			}
 
@@ -610,7 +632,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	}
 
 	setPushBlankLiteral(int(findVar("main").addr))
-	fmt.Println(varTable)
+
 	return allBytes
 }
 
@@ -625,6 +647,8 @@ func main() {
 	toks := GenerateTokens(data)
 
 	byteCode := GenerateBytecode(toks)
+
+	fmt.Println(byteCode)
 
 	os.WriteFile(os.Args[2], byteCode, 0666)
 }
