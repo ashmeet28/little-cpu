@@ -208,8 +208,12 @@ func VMExecInst(vm VMState) VMState {
 		vm.pc++
 
 	case OP_JUMP:
-		vm.pc = vm.s[vm.sp-1]
-		vm.sp--
+		if vm.s[vm.sp-1] == 0 {
+			vm.pc = vm.s[vm.sp-2]
+		} else {
+			vm.pc++
+		}
+		vm.sp -= 2
 
 	case OP_CALL:
 		vm.rs[vm.rsp] = vm.pc + 1
