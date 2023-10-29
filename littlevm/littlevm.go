@@ -4,7 +4,6 @@ import (
 	"fmt"
 	"log"
 	"os"
-	"time"
 )
 
 const (
@@ -241,21 +240,24 @@ func VMExecInst(vm VMState) VMState {
 
 		fmt.Println("pc", vm.pc)
 
-		fmt.Println("s", vm.s)
+		fmt.Println("s", vm.s[:32])
 		fmt.Println("sp", vm.sp)
 		fmt.Println("fp", vm.fp)
 
-		fmt.Println("rs", vm.rs)
+		fmt.Println("rs", vm.rs[:32])
 		fmt.Println("rsp", vm.rsp)
 
-		fmt.Println("fas", vm.fas)
+		fmt.Println("fas", vm.fas[:8])
 		fmt.Println("fasp", vm.fasp)
 
 		fmt.Println("frv", vm.frv)
 
-		fmt.Println("g", vm.g)
+		fmt.Println("g", vm.g[:32])
 
-		fmt.Println("------------------------------------")
+		fmt.Println("-")
+		fmt.Println("-")
+		fmt.Println("-")
+		fmt.Println("-")
 	}
 
 	return vm
@@ -271,16 +273,10 @@ func VMRun(vm VMState) {
 
 		if vm.status == VM_STATUS_ERROR {
 			fmt.Println("VM STATUS: ERROR")
-		} else if vm.status == VM_STATUS_HALT {
-			fmt.Println("VM STATUS: HALT")
-		}
-
-		if IsDebugOn {
-			time.Sleep(100 * time.Millisecond)
 		}
 	}
 
-	fmt.Println(vm.g)
+	fmt.Println(vm.frv)
 }
 
 func VMCreate(byteCode []byte) VMState {
@@ -292,17 +288,17 @@ func VMCreate(byteCode []byte) VMState {
 
 	vm.sp = 0
 	vm.fp = 0
-	vm.s = make([]uint32, 32)
+	vm.s = make([]uint32, 16777216)
 
 	vm.rsp = 0
-	vm.rs = make([]uint32, 32)
+	vm.rs = make([]uint32, 16777216)
 
 	vm.fasp = 0
-	vm.fas = make([]uint32, 8)
+	vm.fas = make([]uint32, 16777216)
 
 	vm.frv = 0
 
-	vm.g = make([]uint32, 16)
+	vm.g = make([]uint32, 16777216)
 
 	vm.status = VM_STATUS_READY
 

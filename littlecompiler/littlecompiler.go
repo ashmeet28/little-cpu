@@ -415,8 +415,6 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 	var compileExpr func(TokenType)
 	compileExpr = func(endTokType TokenType) {
-		// Using shunting yard algorithm
-
 		opPrec := map[TokenType]int{
 			TT_SHL: 5,
 			TT_SHR: 5,
@@ -654,15 +652,11 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 			if blockInfo.blockType == BT_FUNC {
 				currScope--
-				fmt.Println(varTable)
 				clearLocalVarFromVarTable(currScope)
-				fmt.Println(varTable)
 				emitByte(OP_RETURN)
 			} else if blockInfo.blockType == BT_IF_ELSE {
 				currScope--
-				fmt.Println(varTable)
 				clearLocalVarFromVarTable(currScope)
-				fmt.Println(varTable)
 				setPushBlankLiteral(getNextByteAddr())
 			}
 
@@ -701,8 +695,6 @@ func main() {
 	toks := GenerateTokens(data)
 
 	byteCode := GenerateBytecode(toks)
-
-	fmt.Println(byteCode)
 
 	os.WriteFile(os.Args[2], byteCode, 0666)
 }
