@@ -282,6 +282,7 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	const (
 		BT_ILLEGAL BlockType = iota
 		BT_FUNC
+		BT_IF_ELSE
 	)
 
 	var varTable []VarInfo
@@ -631,6 +632,20 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 			consume(TT_NEW_LINE)
 
+		case TT_IF:
+			consume(TT_IF)
+			emitPushBlankLiteral()
+			compileExpr(TT_LBRACE)
+			emitByte(OP_JUMP)
+
+			consume(TT_LBRACE)
+			consume(TT_NEW_LINE)
+			currScope++
+
+			var blockInfo BlockInfo
+			blockInfo.blockType = BT_IF_ELSE
+			blockTable = append(blockTable, blockInfo)
+
 		case TT_RBRACE:
 
 			var blockInfo BlockInfo
@@ -643,6 +658,12 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 				clearLocalVarFromVarTable(currScope)
 				fmt.Println(varTable)
 				emitByte(OP_RETURN)
+			} else if blockInfo.blockType == BT_IF_ELSE {
+				currScope--
+				fmt.Println(varTable)
+				clearLocalVarFromVarTable(currScope)
+				fmt.Println(varTable)
+				setPushBlankLiteral(getNextByteAddr())
 			}
 
 			consume(TT_RBRACE)

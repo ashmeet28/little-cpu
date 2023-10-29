@@ -279,6 +279,8 @@ func VMRun(vm VMState) {
 			time.Sleep(100 * time.Millisecond)
 		}
 	}
+
+	fmt.Println(vm.g)
 }
 
 func VMCreate(byteCode []byte) VMState {
