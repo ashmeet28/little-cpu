@@ -495,11 +495,11 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 				} else if varInfo.varType == VT_FUNC {
 					consume(TT_LPAREN)
 					for i := range varInfo.funcArgs {
-						if i == (len(varInfo.funcArgs) - 1) {
-							compileExpr(TT_RPAREN)
-						} else {
+						if i != (len(varInfo.funcArgs) - 1) {
 							compileExpr(TT_COMMA)
 							consume(TT_COMMA)
+						} else {
+							compileExpr(TT_RPAREN)
 						}
 						emitByte(OP_POP_FUNC_ARG)
 					}
@@ -511,9 +511,9 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 			} else if isOP(tok.tokType) {
 
 				var currOP TokenType = tok.tokType
-				for len(opStack) > 0 {
+				for len(opStack) != 0 {
 					var prevOP TokenType = opStack[len(opStack)-1].tokType
-					if (prevOP != TT_LPAREN) && (opPrec[prevOP] > opPrec[currOP]) {
+					if (prevOP != TT_LPAREN) && (opPrec[prevOP] >= opPrec[currOP]) {
 						popOP()
 					} else {
 						break
@@ -522,18 +522,22 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 				opStack = append(opStack, advance())
 
 			} else if tok.tokType == TT_LPAREN {
+
 				opStack = append(opStack, consume(TT_LPAREN))
+
 			} else if tok.tokType == TT_RPAREN {
+
 				for opStack[len(opStack)-1].tokType != TT_LPAREN {
 					popOP()
 				}
 				opStack = opStack[:len(opStack)-1]
 				consume(TT_RPAREN)
+
 			}
 
 		}
 
-		for len(opStack) > 0 {
+		for len(opStack) != 0 {
 			popOP()
 		}
 	}
