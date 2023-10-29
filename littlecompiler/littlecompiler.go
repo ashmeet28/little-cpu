@@ -300,10 +300,6 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 	}
 
 	emitPushLiteral := func(lit int) {
-		for ((len(allBytes) + 1) % 4) != 0 {
-			emitByte(OP_NOP)
-		}
-
 		emitByte(OP_PUSH_LITERAL)
 
 		allBytes = append(allBytes, byte(lit&0xff))
@@ -314,10 +310,6 @@ func GenerateBytecode(toks []TokenInfo) []byte {
 
 	emitPushBlankLiteral := func() {
 		var lit int = 0
-
-		for ((len(allBytes) + 1) % 4) != 0 {
-			emitByte(OP_NOP)
-		}
 
 		emitByte(OP_PUSH_LITERAL)
 
